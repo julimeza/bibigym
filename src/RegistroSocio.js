@@ -7,7 +7,27 @@ function RegistroSocio({
   guardarSocio,
   mensaje,
   volverInicio,
+  precioMensual = 30000,
+  nuevoPrecio,
+  setNuevoPrecio,
+  mostrarConfiguracion,
+  setMostrarConfiguracion,
+  guardarNuevoPrecio,
+  mensajePrecio,
+  setMensajePrecio,
 }) {
+  const precioFormateado = Number(precioMensual).toLocaleString("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    maximumFractionDigits: 0,
+  });
+
+  const alternarEdicionPrecio = () => {
+    setMensajePrecio("");
+    setNuevoPrecio(String(precioMensual));
+    setMostrarConfiguracion((anterior) => !anterior);
+  };
+
   return (
     <div className="registro-socio">
       <button
@@ -23,10 +43,7 @@ function RegistroSocio({
         <span>INFORMACIÓN DEL SOCIO</span>
       </div>
 
-      <form
-        className="registro-formulario"
-        onSubmit={guardarSocio}
-      >
+      <form className="registro-formulario" onSubmit={guardarSocio}>
         <div className="registro-campos">
           <div className="registro-campo">
             <label htmlFor="nombre">
@@ -101,6 +118,26 @@ function RegistroSocio({
           </div>
 
           <div className="registro-campo">
+            <label htmlFor="formaPago">
+              Forma de pago <span>*</span>
+            </label>
+            <div className="registro-select-contenedor">
+              <select
+                id="formaPago"
+                name="formaPago"
+                value={datos.formaPago || ""}
+                onChange={manejarCambio}
+                required
+              >
+                <option value="">Seleccioná una forma de pago</option>
+                <option value="Efectivo">Efectivo</option>
+                <option value="Transferencia">Transferencia</option>
+              </select>
+              <span aria-hidden="true">⌄</span>
+            </div>
+          </div>
+
+          <div className="registro-campo">
             <label htmlFor="fechaAlta">
               Fecha de inscripción <span>*</span>
             </label>
@@ -113,13 +150,66 @@ function RegistroSocio({
               required
             />
           </div>
+
+          <div className="registro-campo registro-precio">
+            <label>Precio de la mensualidad</label>
+
+            <div className="registro-precio-linea">
+              <div className="registro-precio-valor">
+                {precioFormateado}
+              </div>
+
+              <button
+                type="button"
+                className="registro-precio-editar"
+                onClick={alternarEdicionPrecio}
+              >
+                {mostrarConfiguracion ? "Cancelar edición" : "Editar precio"}
+              </button>
+            </div>
+
+            <small>Tarifa vigente del gimnasio</small>
+
+            {mensajePrecio && (
+              <p className="registro-precio-mensaje" role="status">
+                {mensajePrecio}
+              </p>
+            )}
+
+            {mostrarConfiguracion && (
+              <div className="registro-edicion-precio">
+                <label htmlFor="nuevoPrecioRegistro">
+                  Nuevo precio mensual ($)
+                </label>
+
+                <input
+                  id="nuevoPrecioRegistro"
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={nuevoPrecio}
+                  onChange={(e) => setNuevoPrecio(e.target.value)}
+                  required
+                />
+
+                <button
+                  type="button"
+                  className="registro-precio-guardar"
+                  onClick={guardarNuevoPrecio}
+                >
+                  Guardar precio
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {mensaje && (
           <div
             className={`registro-mensaje ${
               mensaje.startsWith("¡") ||
-              mensaje.startsWith("Formulario validado")
+              mensaje.startsWith("Formulario validado") ||
+              mensaje.startsWith("Socio registrado")
                 ? "registro-mensaje-exito"
                 : "registro-mensaje-error"
             }`}
@@ -138,10 +228,7 @@ function RegistroSocio({
             Cancelar
           </button>
 
-          <button
-            type="submit"
-            className="registro-boton-guardar"
-          >
+          <button type="submit" className="registro-boton-guardar">
             Guardar socio
             <span aria-hidden="true"> →</span>
           </button>
