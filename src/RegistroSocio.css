@@ -1,0 +1,560 @@
+
+/* =================================
+   BIBIGYM — REGISTRO DE SOCIOS
+   ================================= */
+
+.registro-socio {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 8px 4px 2px;
+  box-sizing: border-box;
+  color: #29233b;
+  font-family: inherit;
+}
+
+/* Volver */
+.registro-socio .registro-volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 10px;
+  padding: 9px 13px;
+  border: 1px solid #ece7f3;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #6b607d;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s,
+    color 0.2s, transform 0.2s;
+}
+
+.registro-socio .registro-volver:hover {
+  background: #f7f2fc;
+  border-color: #d9c9ed;
+  color: #7444a5;
+  transform: translateX(-2px);
+}
+
+.registro-socio .registro-volver span {
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* Encabezado del formulario */
+
+.registro-socio .registro-presentacion {
+  display: flex;
+  align-items: center;
+  gap: 19px;
+  margin-bottom: 31px;
+}
+
+.registro-socio .registro-icono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 66px;
+  width: 66px;
+  height: 66px;
+  border-radius: 20px;
+  background: linear-gradient(140deg, #7544a8, #a55bd0);
+  box-shadow: 0 9px 22px rgba(117, 68, 168, 0.22);
+  color: #ffffff;
+  font-size: 37px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.registro-socio .registro-presentacion-texto {
+  min-width: 0;
+}
+
+.registro-socio .registro-etiqueta {
+  display: block;
+  margin-bottom: 7px;
+  color: #9660b8;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.7px;
+}
+
+.registro-socio .registro-presentacion h2 {
+  margin: 0;
+  color: #29233b;
+  font-size: 27px;
+  font-weight: 750;
+  letter-spacing: -0.8px;
+  line-height: 1.2;
+}
+
+.registro-socio .registro-presentacion p {
+  margin: 8px 0 0;
+  color: #81798f;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* Separador */
+
+.registro-socio .registro-divisor {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 25px;
+}
+
+.registro-socio .registro-divisor::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #eee8f3;
+}
+
+.registro-socio .registro-divisor span {
+  color: #8d829b;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.25px;
+  white-space: nowrap;
+}
+
+/* Campos */
+
+.registro-socio .registro-formulario {
+  width: 100%;
+  margin: 0;
+}
+
+.registro-socio .registro-campos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 23px 22px;
+}
+
+.registro-socio .registro-campo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.registro-socio .registro-campo label {
+  display: block;
+  margin: 0 0 9px;
+  color: #494057;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.registro-socio .registro-campo label span,
+.registro-socio .registro-ayuda > span {
+  color: #b04b9c;
+}
+
+.registro-socio .registro-campo input,
+.registro-socio .registro-campo select {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: 48px;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0 13px;
+  border: 1px solid #e5deed;
+  border-radius: 11px;
+  background: #fcfbfe;
+  color: #342b43;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  outline: none;
+  box-shadow: none;
+  transition: border-color 0.2s, background 0.2s,
+    box-shadow 0.2s;
+}
+
+.registro-socio .registro-campo input::placeholder {
+  color: #b0a8bb;
+  opacity: 1;
+}
+
+.registro-socio .registro-campo input:hover,
+.registro-socio .registro-campo select:hover {
+  border-color: #cfc0e0;
+}
+
+.registro-socio .registro-campo input:focus,
+.registro-socio .registro-campo select:focus {
+  border-color: #9460bd;
+  background: #ffffff;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(148, 96, 189, 0.13);
+}
+
+.registro-socio .registro-campo input[type="date"] {
+  color-scheme: light;
+}
+
+.registro-socio .registro-campo small {
+  margin-top: 7px;
+  color: #968ca2;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+/* Selector de plan */
+
+.registro-socio .registro-select-contenedor {
+  position: relative;
+  width: 100%;
+}
+
+.registro-socio .registro-select-contenedor select {
+  appearance: none;
+  padding-right: 38px;
+  background: #f6f1fa;
+  color: #74528f;
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.registro-socio .registro-select-contenedor > span {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  color: #8967a4;
+  font-size: 17px;
+  line-height: 1;
+  transform: translateY(-55%);
+  pointer-events: none;
+}
+
+/* Ayuda y mensajes */
+
+.registro-socio .registro-ayuda {
+  margin: 21px 0 0;
+  color: #94899f;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.registro-socio .registro-mensaje {
+  margin-top: 17px;
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.registro-socio .registro-mensaje-exito {
+  border-color: #ccebdc;
+  background: #f0faf5;
+  color: #287852;
+}
+
+.registro-socio .registro-mensaje-error {
+  border-color: #f0d2df;
+  background: #fff5f8;
+  color: #a33c69;
+}
+
+/* Acciones */
+
+.registro-socio .registro-acciones {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.8fr) minmax(0, 1.4fr);
+  gap: 13px;
+  margin-top: 27px;
+  padding-top: 23px;
+  border-top: 1px solid #eee8f3;
+}
+
+.registro-socio .registro-acciones button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 48px;
+  padding: 12px 16px;
+  border-radius: 11px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s,
+    box-shadow 0.2s, transform 0.2s;
+}
+
+.registro-socio .registro-boton-cancelar {
+  border: 1px solid #e6deee;
+  background: #ffffff;
+  color: #716580;
+}
+
+.registro-socio .registro-boton-cancelar:hover {
+  border-color: #cdb9df;
+  background: #f8f3fc;
+}
+
+.registro-socio .registro-boton-guardar {
+  border: 1px solid #7544a8;
+  background: linear-gradient(110deg, #7544a8, #9458be);
+  color: #ffffff;
+  box-shadow: 0 5px 13px rgba(117, 68, 168, 0.18);
+}
+
+.registro-socio .registro-boton-guardar:hover {
+  background: linear-gradient(110deg, #663793, #8145ad);
+  box-shadow: 0 7px 17px rgba(117, 68, 168, 0.26);
+  transform: translateY(-1px);
+}
+
+.registro-socio .registro-acciones button:focus-visible,
+.registro-socio .registro-volver:focus-visible {
+  outline: 3px solid rgba(148, 96, 189, 0.28);
+  outline-offset: 3px;
+}
+
+.registro-socio .registro-acciones button:active {
+  transform: translateY(1px);
+}
+
+/* Pie */
+
+.registro-socio .registro-pie {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+  color: #a096ad;
+  font-size: 10px;
+  letter-spacing: 0.2px;
+}
+
+.registro-socio .registro-pie-punto {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #a66bc8;
+  box-shadow: 0 0 0 3px #f1e7f8;
+}
+
+/* Ajustes finales para PC, tablet y celular */
+
+.registro-socio {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0 auto;
+}
+
+.registro-socio .registro-campos {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.registro-socio .registro-volver {
+  margin-bottom: 8px;
+}
+
+.registro-socio .registro-divisor {
+  margin-top: 0;
+}
+
+.registro-socio .registro-campo input,
+.registro-socio .registro-campo select {
+  max-width: 100%;
+}
+
+@media (max-width: 600px) {
+  .registro-socio .registro-campos {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 17px;
+  }
+
+  .registro-socio .registro-acciones {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .registro-socio .registro-acciones button {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .registro-socio .registro-pie {
+    flex-wrap: wrap;
+    text-align: center;
+  }
+}
+
+
+
+
+
+/* ========================================
+   REGISTRO DE SOCIOS SIN SCROLL
+   ======================================== */
+
+.fondo-registro {
+  min-height: 100vh;
+  height: 100vh;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.tarjeta-registro {
+  width: 100%;
+  max-width: 980px;
+  padding: 22px 32px 18px;
+  margin: auto;
+  box-sizing: border-box;
+}
+
+/* Encabezado más compacto */
+.tarjeta-registro .logo-marco {
+  width: 68px;
+  height: 68px;
+  margin-bottom: 6px;
+}
+
+.tarjeta-registro .titulo {
+  font-size: 30px;
+  line-height: 1.2;
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
+.tarjeta-registro .subtitulo {
+  font-size: 15px;
+  line-height: 1.4;
+  margin-top: 4px;
+  margin-bottom: 10px;
+}
+
+/* Menos espacio entre los campos */
+.tarjeta-registro .registro-campo {
+  margin-bottom: 10px;
+}
+
+.tarjeta-registro .registro-campo label {
+  font-size: 15px;
+  margin-bottom: 5px;
+}
+
+.tarjeta-registro .registro-campo input,
+.tarjeta-registro .registro-campo select {
+  height: 46px;
+  font-size: 16px;
+}
+
+.tarjeta-registro .registro-campo small {
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+/* Botones más compactos */
+.tarjeta-registro .registro-acciones {
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.tarjeta-registro .registro-acciones button {
+  min-height: 46px;
+  padding: 10px 14px;
+  font-size: 15px;
+}
+
+.tarjeta-registro .registro-volver {
+  min-height: 38px;
+  padding: 7px 12px;
+  font-size: 14px;
+}
+
+.tarjeta-registro .registro-mensaje {
+  font-size: 14px;
+  line-height: 1.4;
+  padding: 9px 12px;
+  margin: 8px 0;
+}
+
+.tarjeta-registro .registro-pie {
+  font-size: 11px;
+  margin-top: 8px;
+}
+
+/* Pantallas bajas: aprovechar mejor el espacio */
+@media (max-height: 800px) {
+  .fondo-registro {
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .tarjeta-registro {
+    padding-top: 14px;
+    padding-bottom: 12px;
+  }
+
+  .tarjeta-registro .logo-marco {
+    width: 54px;
+    height: 54px;
+  }
+
+  .tarjeta-registro .titulo {
+    font-size: 27px;
+  }
+
+  .tarjeta-registro .subtitulo {
+    margin-bottom: 6px;
+  }
+
+  .tarjeta-registro .registro-campo {
+    margin-bottom: 7px;
+  }
+
+  .tarjeta-registro .registro-campo input,
+  .tarjeta-registro .registro-campo select {
+    height: 42px;
+  }
+
+  .tarjeta-registro .registro-acciones button {
+    min-height: 42px;
+  }
+}
+
+/* Celulares */
+@media (max-width: 600px) {
+  .fondo-registro {
+    height: auto;
+    min-height: 100vh;
+    padding: 12px;
+    align-items: flex-start;
+  }
+
+  .tarjeta-registro {
+    padding: 20px 16px;
+  }
+
+  .tarjeta-registro .logo-marco {
+    width: 60px;
+    height: 60px;
+  }
+
+  .tarjeta-registro .titulo {
+    font-size: 27px;
+  }
+
+  .tarjeta-registro .registro-campo input,
+  .tarjeta-registro .registro-campo select {
+    height: 46px;
+  }
+}

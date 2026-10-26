@@ -1,38 +1,682 @@
-.App {
-  text-align: center;
+
+:root {
+  --rosa: #e94f93;
+  --rosa-hover: #d94383;
+  --rosa-claro: #fff1f7;
+  --rosa-borde: #f3c5d9;
+  --fondo: #faf7f9;
+  --blanco: #ffffff;
+  --texto: #927b9b;
+  --texto-secundario: #a18ca9;
+  --texto-suave: #b9a8bf;
+  --borde: #e8e1e7;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+html {
+  width: 100%;
+  min-height: 100%;
 }
 
-.App-header {
-  background-color: #282c34;
+body {
+  margin: 0;
+  min-width: 320px;
   min-height: 100vh;
+  font-family: "Manrope", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  color: var(--texto);
+  background: var(--fondo);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Fondo general */
+
+.fondo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 32px 20px;
+  background:
+    radial-gradient(
+      circle at 15% 10%,
+      rgba(246, 174, 207, 0.2),
+      transparent 32%
+    ),
+    radial-gradient(
+      circle at 90% 90%,
+      rgba(220, 198, 255, 0.16),
+      transparent 32%
+    ),
+    var(--fondo);
+}
+
+/* En el registro, el contenido empieza arriba para evitar
+   que los campos queden cortados en pantallas bajas. */
+
+.fondo-registro {
+  align-items: flex-start;
+}
+
+/* Tarjeta principal */
+
+.tarjeta {
+  position: relative;
+  flex: 0 1 430px;
+  width: 100%;
+  max-width: 430px;
+  min-width: 0;
+  margin: auto;
+  padding: 42px 40px 30px;
+  overflow-wrap: anywhere;
+  background: #fffafd;
+  border: 1px solid #f0e5f0;
+  border-radius: 22px;
+  box-shadow:
+    10px 10px 28px rgba(190, 164, 193, 0.18),
+    -8px -8px 24px rgba(255, 255, 255, 0.9),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.95);
+  text-align: center;
+  animation: aparecer 0.35s ease-out;
+}
+
+/* La tarjeta se ensancha únicamente en el registro */
+
+.tarjeta-registro {
+  flex-basis: 820px;
+  max-width: 820px;
+  padding: 32px 36px 26px;
+  text-align: left;
+}
+
+.tarjeta-registro .cabecera {
+  margin-bottom: 20px;
+}
+
+/* Cabecera y logo */
+
+.cabecera {
   display: flex;
   flex-direction: column;
   align-items: center;
+  margin-bottom: 34px;
+}
+
+.logo-marco {
+  display: flex;
+  align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  flex: 0 0 auto;
+  width: 82px;
+  height: 82px;
+  padding: 3px;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #f8b7d3, #e9cfff);
+  box-shadow: 0 12px 26px rgba(224, 118, 157, 0.18);
 }
 
-.App-link {
-  color: #61dafb;
+.logo-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 17px;
+  background: #ffffff;
 }
 
-@keyframes App-logo-spin {
+.encabezado-texto {
+  min-width: 0;
+  margin-top: 18px;
+  text-align: center;
+}
+
+.titulo {
+  margin: 0;
+  color: var(--texto);
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.8px;
+}
+
+.subtitulo {
+  margin: 8px 0 0;
+  color: var(--texto-secundario);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+/* Inicio: búsqueda por DNI */
+
+.bloque {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  text-align: left;
+}
+
+.etiqueta {
+  width: 85%;
+  max-width: 290px;
+  margin: 0 auto;
+  color: var(--texto-secundario);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.input {
+  display: block;
+  width: 85%;
+  max-width: 290px;
+  min-width: 0;
+  height: 48px;
+  margin: 0 auto;
+  padding: 0 16px;
+  border: 1px solid #e5d5e9;
+  border-radius: 12px;
+  outline: none;
+  background: #fbf7fc;
+  color: #72577d;
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: inset 0 1px 3px rgba(177, 153, 185, 0.08);
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.input::placeholder {
+  color: #b6a4bd;
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 1;
+}
+
+.input:hover {
+  border-color: #d9c4e0;
+  background: #ffffff;
+}
+
+.input:focus {
+  border-color: #d9a1c5;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(233, 79, 147, 0.12);
+}
+
+/* Botones de inicio */
+
+.boton {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 85%;
+  max-width: 290px;
+  min-height: 48px;
+  margin-right: auto;
+  margin-left: auto;
+  padding: 12px 18px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.1px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.boton:focus-visible,
+.registro-socio button:focus-visible {
+  outline: 3px solid rgba(233, 79, 147, 0.3);
+  outline-offset: 3px;
+}
+
+.boton:active {
+  transform: translateY(1px);
+}
+
+.boton-primario {
+  margin-top: 10px;
+  border-color: var(--rosa);
+  background: var(--rosa);
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(233, 79, 147, 0.2);
+}
+
+.boton-primario:hover {
+  border-color: var(--rosa-hover);
+  background: var(--rosa-hover);
+  transform: translateY(-1px);
+}
+
+.flecha {
+  display: inline-block;
+  font-size: 20px;
+  line-height: 1;
+  transition: transform 0.18s;
+}
+
+.boton-primario:hover .flecha {
+  transform: translateX(4px);
+}
+
+.separador {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 24px 0;
+  color: #aaa0a9;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.separador::before,
+.separador::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #eee8ed;
+}
+
+.boton-secundario {
+  border-color: var(--borde);
+  background: #ffffff;
+  color: var(--texto);
+  box-shadow: 0 2px 5px rgba(40, 30, 40, 0.03);
+}
+
+.boton-secundario:hover {
+  border-color: var(--rosa-borde);
+  background: var(--rosa-claro);
+  color: var(--rosa);
+}
+
+/* Mensaje de la pantalla de inicio */
+
+.mensaje-formulario {
+  margin: 18px 0 0;
+  padding: 12px 14px;
+  border: 1px solid #ead8f0;
+  border-radius: 12px;
+  background: #fbf4ff;
+  color: var(--texto);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+/* Pie antiguo, por si se utiliza en otra pantalla */
+
+.pie-tarjeta {
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid #f0eaf0;
+  color: var(--texto-suave);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+/* Animación */
+
+@keyframes aparecer {
   from {
-    transform: rotate(0deg);
+    opacity: 0;
+    transform: translateY(8px);
   }
+
   to {
-    transform: rotate(360deg);
+    opacity: 1;
+    transform: translateY(0);
   }
 }
+
+/* Tablet y pantallas medianas */
+
+@media (max-width: 900px) {
+  .fondo {
+    padding: 24px 18px;
+  }
+
+  .tarjeta-registro {
+    padding: 28px 26px 24px;
+  }
+}
+
+/* Celulares */
+
+@media (max-width: 600px) {
+  .fondo {
+    padding: 16px 12px;
+  }
+
+  .tarjeta {
+    padding: 32px 22px 26px;
+    border-radius: 20px;
+  }
+
+  .tarjeta-registro {
+    padding: 22px 18px 22px;
+  }
+
+  .cabecera {
+    margin-bottom: 28px;
+  }
+
+  .tarjeta-registro .cabecera {
+    margin-bottom: 16px;
+  }
+
+  .logo-marco {
+    width: 72px;
+    height: 72px;
+    border-radius: 17px;
+  }
+
+  .logo-img {
+    border-radius: 14px;
+  }
+
+  .titulo {
+    font-size: 27px;
+  }
+
+  .subtitulo {
+    font-size: 13px;
+  }
+
+  .etiqueta,
+  .input,
+  .boton {
+    width: 100%;
+    max-width: none;
+  }
+
+  .input,
+  .boton {
+    min-height: 48px;
+  }
+}
+
+/* Celulares muy estrechos */
+
+@media (max-width: 360px) {
+  .fondo {
+    padding: 10px 8px;
+  }
+
+  .tarjeta {
+    padding: 26px 16px 22px;
+    border-radius: 16px;
+  }
+
+  .tarjeta-registro {
+    padding: 18px 12px;
+  }
+}
+
+/* Reduce animaciones si el dispositivo lo solicita */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ======================================
+   BIBIGYM — MEJOR LEGIBILIDAD
+   ====================================== */
+
+/* Tarjeta principal más amplia */
+.tarjeta {
+  max-width: 500px;
+  padding: 48px 44px 38px;
+  border-radius: 24px;
+}
+
+/* Registro más espacioso en PC */
+.tarjeta-registro {
+  max-width: 920px;
+  padding: 38px 42px 34px;
+}
+
+/* Logo más visible */
+.logo-marco {
+  width: 94px;
+  height: 94px;
+}
+
+/* Nombre del gimnasio */
+.titulo {
+  font-size: 36px;
+  line-height: 1.3;
+  letter-spacing: -0.5px;
+}
+
+/* Subtítulos */
+.subtitulo {
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+/* Etiquetas */
+.etiqueta {
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* Campo para ingresar el DNI */
+.input {
+  height: 56px;
+  font-size: 17px;
+  padding: 0 17px;
+  border-radius: 13px;
+}
+
+.input::placeholder {
+  font-size: 15px;
+}
+
+/* Botones más grandes */
+.boton {
+  min-height: 56px;
+  font-size: 16px;
+  padding: 14px 20px;
+  border-radius: 13px;
+}
+
+/* Separador */
+.separador {
+  font-size: 14px;
+  margin: 26px 0;
+}
+
+/* Mensajes más fáciles de leer */
+.mensaje-formulario {
+  font-size: 15px;
+  line-height: 1.7;
+  padding: 14px 16px;
+}
+
+/* En tablet, mantener un tamaño cómodo */
+@media (max-width: 900px) {
+  .tarjeta {
+    max-width: 540px;
+    padding: 38px 32px 32px;
+  }
+
+  .tarjeta-registro {
+    max-width: 820px;
+    padding: 30px 28px;
+  }
+
+  .titulo {
+    font-size: 33px;
+  }
+}
+
+
+/* ========================================
+   BIBIGYM - TAMAÑO INTERMEDIO Y LEGIBLE
+   ======================================== */
+
+.tarjeta {
+  width: 100%;
+  max-width: 560px;
+  padding: 42px 38px 34px;
+  border-radius: 24px;
+}
+
+.tarjeta-registro {
+  width: 100%;
+  max-width: 980px;
+  padding: 36px 40px 32px;
+  border-radius: 24px;
+}
+
+.logo-marco {
+  width: 100px;
+  height: 100px;
+}
+
+.titulo {
+  font-size: 39px;
+  line-height: 1.3;
+  letter-spacing: 0;
+}
+
+.subtitulo {
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+.etiqueta {
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+.input {
+  width: 100%;
+  height: 60px;
+  padding: 0 17px;
+  font-size: 18px;
+  border-radius: 13px;
+}
+
+.input::placeholder {
+  font-size: 16px;
+}
+
+.boton {
+  min-height: 60px;
+  padding: 15px 20px;
+  font-size: 17px;
+  border-radius: 13px;
+}
+
+.separador {
+  font-size: 15px;
+  margin: 26px 0;
+}
+
+.mensaje-formulario {
+  font-size: 16px;
+  line-height: 1.7;
+  padding: 15px 17px;
+}
+
+/* Tablet */
+@media (max-width: 900px) {
+  .tarjeta {
+    max-width: 580px;
+    padding: 34px 28px;
+  }
+
+  .tarjeta-registro {
+    max-width: 820px;
+    padding: 30px 26px;
+  }
+
+  .titulo {
+    font-size: 35px;
+  }
+}
+
+/* Celular */
+@media (max-width: 600px) {
+  .tarjeta,
+  .tarjeta-registro {
+    width: 100%;
+    padding: 26px 18px;
+    border-radius: 20px;
+  }
+
+  .logo-marco {
+    width: 82px;
+    height: 82px;
+  }
+
+  .titulo {
+    font-size: 31px;
+  }
+
+  .subtitulo {
+    font-size: 16px;
+  }
+
+  .etiqueta {
+    font-size: 16px;
+  }
+
+  .input {
+    height: 54px;
+    font-size: 16px;
+  }
+
+  .input::placeholder {
+    font-size: 14px;
+  }
+
+  .boton {
+    min-height: 54px;
+    font-size: 16px;
+  }
+
+  .mensaje-formulario {
+    font-size: 15px;
+  }
+}
+
+
