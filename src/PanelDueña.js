@@ -273,27 +273,6 @@ function PanelDueña({ onVolver }) {
       });
   }, [socios, busqueda, filtro]);
 
-  const todosLosPagos = useMemo(() => {
-    const pagos = [];
-
-    socios.forEach((socio) => {
-      if (!Array.isArray(socio.pagos)) return;
-
-      socio.pagos.forEach((pago) => {
-        pagos.push({
-          ...pago,
-          socioNombre: `${socio.nombre || ""} ${
-            socio.apellido || ""
-          }`.trim(),
-          socioDni: socio.dni,
-        });
-      });
-    });
-
-    return pagos.sort((a, b) =>
-      String(b.fecha).localeCompare(String(a.fecha))
-    );
-  }, [socios]);
 
   const eliminarSocio = (socio) => {
     const nombre =
