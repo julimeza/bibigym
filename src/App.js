@@ -264,8 +264,6 @@ function App() {
   const [mostrarPago, setMostrarPago] =
     useState(false);
 
-  const [importePago, setImportePago] =
-    useState("");
 
   const [formaPago, setFormaPago] =
     useState("Efectivo");
@@ -561,7 +559,7 @@ const abrirPago = () => {
 
   setPlanRenovacion(planActual);
   setActividadesRenovacion(actividadesActuales);
-  setImportePago("");
+
   setFormaPago("Efectivo");
   setMensajePago("");
   setMostrarPago(true);
