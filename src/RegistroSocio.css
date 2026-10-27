@@ -903,3 +903,164 @@
     margin-top: 5px;
   }
 }
+
+
+/***//**
+
+/* ==========================================
+   PLANES Y ACTIVIDADES ADICIONALES
+   ========================================== */
+
+.registro-socio .registro-actividades {
+  margin-top: 24px;
+  padding: 18px;
+  border: 1px solid #eadff1;
+  border-radius: 14px;
+  background: #fdfaff;
+}
+
+.registro-socio .registro-actividades-encabezado h3 {
+  margin: 0;
+  color: #49335e;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.registro-socio .registro-actividades-encabezado p {
+  margin: 7px 0 15px;
+  color: #81758d;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.registro-socio .registro-actividades-lista {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.registro-socio .registro-actividad-opcion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #e8e0ef;
+  border-radius: 11px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.registro-socio .registro-actividad-opcion.seleccionada {
+  border-color: #a77ac7;
+  background: #f7effd;
+}
+
+.registro-socio .registro-actividad-opcion input[type="checkbox"] {
+  flex: 0 0 17px;
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  accent-color: #7544a8;
+  cursor: pointer;
+}
+
+.registro-socio .registro-actividad-texto {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.registro-socio .registro-actividad-texto strong {
+  color: #493b58;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.registro-socio .registro-actividad-texto small {
+  margin: 0;
+  color: #94869f;
+  font-size: 10px;
+}
+
+.registro-socio .registro-actividad-precio {
+  color: #7544a8;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.registro-socio .registro-total {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 17px;
+  border: 1px solid #e8d9f2;
+  border-radius: 13px;
+  background: #f8f2fc;
+}
+
+.registro-socio .registro-total > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.registro-socio .registro-total span {
+  color: #76677f;
+  font-size: 12px;
+}
+
+.registro-socio .registro-total strong {
+  color: #5c3b76;
+  font-size: 13px;
+  text-align: right;
+}
+
+.registro-socio .registro-total .registro-total-final {
+  margin-top: 3px;
+  padding-top: 12px;
+  border-top: 1px solid #e3d2ef;
+}
+
+.registro-socio .registro-total-final span {
+  color: #49335e;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.registro-socio .registro-total-final strong {
+  color: #7544a8;
+  font-size: 23px;
+  font-weight: 850;
+}
+
+@media (max-width: 600px) {
+  .registro-socio .registro-actividades {
+    margin-top: 18px;
+    padding: 13px;
+  }
+
+  .registro-socio .registro-actividades-lista {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .registro-socio .registro-actividad-opcion {
+    padding: 11px;
+  }
+
+  .registro-socio .registro-total {
+    padding: 14px;
+  }
+
+  .registro-socio .registro-total-final strong {
+    font-size: 21px;
+  }
+}

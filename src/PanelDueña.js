@@ -1,788 +1,805 @@
-
-import { useMemo, useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import "./PanelDueña.css";
-
-const CLAVE_SOCIOS = "bibigym_socios";
-const CLAVE_PRECIO = "bibigym_precio_mensual";
-const CLAVE_PANEL = "bibigym_panel_autorizado";
 
 const CLAVE_PASSWORD = "bibigym2026";
 
-const obtenerFechaActual = () => {
-  const fecha = new Date();
+function fechaHoy() {
+  const hoy = new Date();
+  const anio = hoy.getFullYear();
+  const mes = String(hoy.getMonth() + 1).padStart(2, "0");
+  const dia = String(hoy.getDate()).padStart(2, "0");
+  return `${anio}-${mes}-${dia}`;
+}
 
-  return `${fecha.getFullYear()}-${String(
-    fecha.getMonth() + 1
-  ).padStart(2, "0")}-${String(
-    fecha.getDate()
-  ).padStart(2, "0")}`;
-};
-
-const obtenerMesActual = () =>
-  obtenerFechaActual().slice(0, 7);
-
-const fechaDesdeTexto = (texto) => {
-  if (!texto) return new Date();
-
-  const [anio, mes, dia] = texto.split("-").map(Number);
-
-  return new Date(anio, mes - 1, dia, 12);
-};
-
-const calcularDias = (fechaTexto) => {
-  if (!fechaTexto) return 0;
-
-  const hoy = fechaDesdeTexto(obtenerFechaActual());
-  const objetivo = fechaDesdeTexto(fechaTexto);
-
-  return Math.round((objetivo - hoy) / 86400000);
-};
-
-const formatearFecha = (fechaTexto) => {
-  if (!fechaTexto) return "—";
-
-  return fechaTexto.split("-").reverse().join("/");
-};
-
-const formatearPrecio = (importe) =>
-  Number(importe || 0).toLocaleString("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  });
-
-const obtenerSocios = () => {
+function obtenerSocios() {
   try {
-    const datos = JSON.parse(localStorage.getItem(CLAVE_SOCIOS));
-
-    return Array.isArray(datos) ? datos : [];
+    return JSON.parse(localStorage.getItem("bibigym_socios") || "[]");
   } catch {
     return [];
   }
-};
+}
 
-const guardarSocios = (socios) => {
-  localStorage.setItem(CLAVE_SOCIOS, JSON.stringify(socios));
-};
+function obtenerPagos(socios) {
+  return socios.flatMap((socio) =>
+    (socio.pagos || []).map((pago, indice) => ({
+      ...pago,
+      socioNombre: obtenerNombre(socio),
+      dni: socio.dni || "",
+      importe: Number(pago.importe) || 0,
+      pagoId: `${socio.dni || obtenerNombre(socio)}-${pago.fecha || ""}-${indice}`,
+    }))
+  );
+}
 
-const obtenerPrecio = () => {
-  try {
-    const precio = Number(localStorage.getItem(CLAVE_PRECIO));
+function obtenerNombre(socio) {
+  return [socio.nombre, socio.apellido].filter(Boolean).join(" ") || "Sin nombre";
+}
 
-    return Number.isFinite(precio) && precio > 0
-      ? precio
-      : 30000;
-  } catch {
-    return 30000;
-  }
-};
+function fechaLegible(fecha) {
+  if (!fecha) return "Sin fecha";
 
-const obtenerEstado = (socio) => {
-  const dias = calcularDias(socio.fechaVencimiento);
+  const partes = String(fecha).slice(0, 10).split("-");
+  if (partes.length !== 3) return fecha;
 
-  if (dias < 0) {
-    return { tipo: "vencida", texto: "Vencida", dias };
-  }
+  const [anio, mes, dia] = partes;
+  if (!anio || !mes || !dia) return fecha;
 
-  if (dias <= 3) {
-    return {
-      tipo: "proxima",
-      texto:
-        dias === 0
-          ? "Vence hoy"
-          : `Vence en ${dias} ${dias === 1 ? "día" : "días"}`,
-      dias,
-    };
-  }
+  return `${dia}/${mes}/${anio}`;
+}
 
-  return { tipo: "aldia", texto: "Al día", dias };
-};
+function dinero(valor) {
+  return new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    maximumFractionDigits: 2,
+  }).format(Number(valor) || 0);
+}
 
-const obtenerUltimoPago = (socio) => {
-  if (!Array.isArray(socio.pagos) || socio.pagos.length === 0) {
-    return null;
-  }
+function obtenerEstado(socio) {
+  if (!socio.fechaVencimiento) return "Sin vencimiento";
 
-  return [...socio.pagos].sort((a, b) =>
-    String(b.fecha).localeCompare(String(a.fecha))
-  )[0];
-};
+  const hoy = new Date(`${fechaHoy()}T00:00:00`);
+  const vencimiento = new Date(`${socio.fechaVencimiento}T00:00:00`);
 
-// Reconoce las formas de pago habituales.
-const esEfectivo = (formaPago) =>
-  String(formaPago || "")
-    .trim()
-    .toLowerCase()
-    .includes("efectivo");
+  if (Number.isNaN(vencimiento.getTime())) return "Sin vencimiento";
 
-const esTransferencia = (formaPago) =>
-  String(formaPago || "")
-    .trim()
-    .toLowerCase()
-    .includes("transfer");
+  const diferencia = Math.ceil(
+    (vencimiento.getTime() - hoy.getTime()) / 86400000
+  );
 
-function PanelDueña({ onVolver }) {
-  const [autorizado, setAutorizado] = useState(() => {
-    try {
-      return localStorage.getItem(CLAVE_PANEL) === "true";
-    } catch {
-      return false;
-    }
-  });
+  if (diferencia < 0) return "Vencido";
+  if (diferencia <= 5) return "Por vencer";
+  return "Al día";
+}
 
-  const [password, setPassword] = useState("");
-  const [mensajeLogin, setMensajeLogin] = useState("");
-  const [seccion, setSeccion] = useState("resumen");
+
+export default function PanelDueña({ onVolver }) {
+  const [autorizado, setAutorizado] = useState(
+    localStorage.getItem("bibigym_panel_autorizado") === "true"
+  );
+  const [clave, setClave] = useState("");
+  const [errorLogin, setErrorLogin] = useState("");
   const [socios, setSocios] = useState(obtenerSocios);
+  const [seccion, setSeccion] = useState("resumen");
   const [busqueda, setBusqueda] = useState("");
-  const [filtro, setFiltro] = useState("todos");
+  const [filtroEstado, setFiltroEstado] = useState("Todos");
+  const [filtroMetodo, setFiltroMetodo] = useState("Todos");
+  const [fechaSeleccionada, setFechaSeleccionada] = useState(fechaHoy());
   const [socioSeleccionado, setSocioSeleccionado] = useState(null);
-  const [precio, setPrecio] = useState(String(obtenerPrecio()));
-  const [mensajePrecio, setMensajePrecio] = useState("");
+  const [confirmarEliminar, setConfirmarEliminar] = useState(false);
 
-  const ingresar = (e) => {
+  useEffect(() => {
+    const sincronizar = () => setSocios(obtenerSocios());
+
+    window.addEventListener("storage", sincronizar);
+
+    return () => window.removeEventListener("storage", sincronizar);
+  }, []);
+
+  const movimientos = useMemo(() => obtenerPagos(socios), [socios]);
+
+  const movimientosFiltrados = useMemo(() => {
+    return movimientos
+      .filter((pago) => {
+        const fecha = pago.fecha || "";
+
+        // Mostrar únicamente los pagos de la fecha seleccionada
+        const coincideFecha = fecha === fechaSeleccionada;
+
+        const metodo = String(pago.formaPago || "").toLowerCase();
+
+        const coincideMetodo =
+          filtroMetodo === "Todos" ||
+          (filtroMetodo === "Efectivo" &&
+            metodo.includes("efectivo")) ||
+          (filtroMetodo === "Transferencia" &&
+            (metodo.includes("transfer") ||
+              metodo.includes("mercado pago")));
+
+        const texto = `${pago.socioNombre} ${pago.dni} ${
+          pago.concepto || ""
+        } ${pago.formaPago || ""}`.toLowerCase();
+
+        return (
+          coincideFecha &&
+          coincideMetodo &&
+          texto.includes(busqueda.toLowerCase())
+        );
+      })
+      .sort((a, b) => (b.fecha || "").localeCompare(a.fecha || ""));
+  }, [movimientos, fechaSeleccionada, filtroMetodo, busqueda]);
+
+  const estadisticas = useMemo(() => {
+    const hoy = fechaHoy();
+    const mesActual = hoy.slice(0, 7);
+    const pagosMes = movimientos.filter((p) =>
+      (p.fecha || "").startsWith(mesActual)
+    );
+
+    const sumar = (lista) =>
+      lista.reduce((total, pago) => total + pago.importe, 0);
+
+    const efectivo = sumar(
+      pagosMes.filter((p) =>
+        String(p.formaPago || "").toLowerCase().includes("efectivo")
+      )
+    );
+
+    const transferencias = sumar(
+      pagosMes.filter((p) => {
+        const metodo = String(p.formaPago || "").toLowerCase();
+        return metodo.includes("transfer") || metodo.includes("mercado pago");
+      })
+    );
+
+    const otrosMedios = sumar(
+      pagosMes.filter((p) => {
+        const metodo = String(p.formaPago || "").toLowerCase();
+        return !metodo.includes("efectivo") &&
+          !metodo.includes("transfer") &&
+          !metodo.includes("mercado pago");
+      })
+    );
+
+    return {
+      totalSocios: socios.length,
+      alDia: socios.filter((s) => obtenerEstado(s) === "Al día").length,
+      porVencer: socios.filter((s) => obtenerEstado(s) === "Por vencer").length,
+      vencidos: socios.filter((s) => obtenerEstado(s) === "Vencido").length,
+      sinVencimiento: socios.filter(
+        (s) => obtenerEstado(s) === "Sin vencimiento"
+      ).length,
+      recaudacion: sumar(pagosMes),
+      efectivo,
+      transferencias,
+      otrosMedios,
+      pagosMes: pagosMes.length,
+    };
+  }, [socios, movimientos]);
+
+  const sociosFiltrados = useMemo(() => {
+    return socios
+      .filter((socio) => {
+        const texto = `${socio.nombre || ""} ${socio.apellido || ""} ${
+          socio.dni || ""
+        } ${socio.telefono || ""}`.toLowerCase();
+
+        const coincideBusqueda = texto.includes(busqueda.toLowerCase());
+        const estado = obtenerEstado(socio);
+        const coincideEstado =
+          filtroEstado === "Todos" || estado === filtroEstado;
+
+        return coincideBusqueda && coincideEstado;
+      })
+      .sort((a, b) => obtenerNombre(a).localeCompare(obtenerNombre(b)));
+  }, [socios, busqueda, filtroEstado]);
+
+  const pagosDelSocio = useMemo(() => {
+    if (!socioSeleccionado) return [];
+
+    return (socioSeleccionado.pagos || [])
+      .map((pago, indice) => ({ ...pago, _indice: indice }))
+      .sort((a, b) => (b.fecha || "").localeCompare(a.fecha || ""));
+  }, [socioSeleccionado]);
+
+  const iniciarSesion = (e) => {
     e.preventDefault();
 
-    if (password !== CLAVE_PASSWORD) {
-      setMensajeLogin("La contraseña es incorrecta.");
-      return;
+    if (clave === CLAVE_PASSWORD) {
+      localStorage.setItem("bibigym_panel_autorizado", "true");
+      setAutorizado(true);
+      setErrorLogin("");
+      setClave("");
+    } else {
+      setErrorLogin("La contraseña es incorrecta.");
     }
-
-    try {
-      localStorage.setItem(CLAVE_PANEL, "true");
-    } catch {
-      // Sin acción.
-    }
-
-    setAutorizado(true);
-    setPassword("");
-    setMensajeLogin("");
   };
 
   const cerrarSesion = () => {
-    try {
-      localStorage.removeItem(CLAVE_PANEL);
-    } catch {
-      // Sin acción.
-    }
-
+    localStorage.removeItem("bibigym_panel_autorizado");
     setAutorizado(false);
-    setSocioSeleccionado(null);
+    setClave("");
   };
 
-  const actualizar = () => {
-    setSocios(obtenerSocios());
-    setSocioSeleccionado(null);
-  };
+  const eliminarSocio = () => {
+    if (!socioSeleccionado) return;
 
-  const guardarPrecio = () => {
-    const nuevoPrecio = Number(precio);
-
-    if (!Number.isFinite(nuevoPrecio) || nuevoPrecio <= 0) {
-      setMensajePrecio("Ingresá un precio válido.");
-      return;
-    }
-
-    try {
-      localStorage.setItem(CLAVE_PRECIO, String(nuevoPrecio));
-      setPrecio(String(nuevoPrecio));
-      setMensajePrecio("Precio actualizado correctamente.");
-    } catch {
-      setMensajePrecio("No se pudo guardar el precio.");
-    }
-  };
-
-  const estadisticas = useMemo(() => {
-    let alDia = 0;
-    let proximos = 0;
-    let vencidos = 0;
-    let recaudacion = 0;
-    let efectivo = 0;
-    let transferencias = 0;
-
-    const mesActual = obtenerMesActual();
-
-    socios.forEach((socio) => {
-      const estado = obtenerEstado(socio);
-
-      if (estado.tipo === "aldia") alDia++;
-      if (estado.tipo === "proxima") proximos++;
-      if (estado.tipo === "vencida") vencidos++;
-
-      if (Array.isArray(socio.pagos)) {
-        socio.pagos.forEach((pago) => {
-          if (String(pago.fecha || "").startsWith(mesActual)) {
-            const importe = Number(pago.importe || 0);
-
-            recaudacion += importe;
-
-            if (esEfectivo(pago.formaPago)) {
-              efectivo += importe;
-            } else if (esTransferencia(pago.formaPago)) {
-              transferencias += importe;
-            }
-          }
-        });
-      }
-    });
-
-    return {
-      total: socios.length,
-      alDia,
-      proximos,
-      vencidos,
-      recaudacion,
-      efectivo,
-      transferencias,
-    };
-  }, [socios]);
-
-  const sociosFiltrados = useMemo(() => {
-    const texto = busqueda.trim().toLowerCase();
-
-    return socios
-      .filter((socio) => {
-        const estado = obtenerEstado(socio);
-
-        if (filtro !== "todos" && estado.tipo !== filtro) {
-          return false;
-        }
-
-        if (!texto) return true;
-
-        const nombre =
-          `${socio.nombre || ""} ${socio.apellido || ""}`.toLowerCase();
-
-        const dni = String(socio.dni || "").toLowerCase();
-        const telefono = String(socio.telefono || "").toLowerCase();
-
-        return (
-          nombre.includes(texto) ||
-          dni.includes(texto) ||
-          telefono.includes(texto)
-        );
-      })
-      .sort((a, b) => {
-        const nombreA =
-          `${a.apellido || ""} ${a.nombre || ""}`.toLowerCase();
-
-        const nombreB =
-          `${b.apellido || ""} ${b.nombre || ""}`.toLowerCase();
-
-        return nombreA.localeCompare(nombreB);
-      });
-  }, [socios, busqueda, filtro]);
-
-
-  const eliminarSocio = (socio) => {
-    const nombre =
-      `${socio.nombre || ""} ${socio.apellido || ""}`.trim();
-
-    const confirmar = window.confirm(
-      `¿Querés eliminar a ${nombre}? Esta acción no se puede deshacer.`
+    const actualizados = socios.filter(
+      (socio) => socio.dni !== socioSeleccionado.dni
     );
 
-    if (!confirmar) return;
+    localStorage.setItem("bibigym_socios", JSON.stringify(actualizados));
+    setSocios(actualizados);
+    setSocioSeleccionado(null);
+    setConfirmarEliminar(false);
+  };
 
-    const nuevosSocios = socios.filter(
-      (item) =>
-        String(item.dni).trim() !== String(socio.dni).trim()
-    );
-
-    try {
-      guardarSocios(nuevosSocios);
-      setSocios(nuevosSocios);
-      setSocioSeleccionado(null);
-    } catch {
-      window.alert("No se pudo eliminar el socio.");
-    }
+  const abrirSocio = (socio) => {
+    setSocioSeleccionado(socio);
+    setConfirmarEliminar(false);
   };
 
   if (!autorizado) {
     return (
-      <div className="panel-login">
-        <div className="panel-login-icono">🔐</div>
+      <main className="pd-login">
+        <form className="pd-login-card" onSubmit={iniciarSesion}>
+          <div className="pd-logo">BG</div>
+          <p className="pd-eyebrow">BIBIGYM</p>
+          <h1>Panel de administración</h1>
+          <p>Ingresá tu contraseña para continuar.</p>
 
-        <span className="panel-kicker">BIBIGYM</span>
-
-        <p>Accedé a la administración del gimnasio.</p>
-
-        <form className="panel-login-form" onSubmit={ingresar}>
-          <label htmlFor="clave-panel">Contraseña</label>
-
+          <label htmlFor="pd-clave">Contraseña</label>
           <input
-            id="clave-panel"
+            id="pd-clave"
             type="password"
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              setMensajeLogin("");
-            }}
-            placeholder="Ingresá la contraseña"
+            value={clave}
+            onChange={(e) => setClave(e.target.value)}
             autoComplete="current-password"
+            required
           />
 
-          {mensajeLogin && (
-            <p className="panel-error" role="alert">
-              {mensajeLogin}
-            </p>
+          {errorLogin && <p className="pd-error">{errorLogin}</p>}
+
+          <button className="pd-btn pd-btn-primary" type="submit">
+            Ingresar
+          </button>
+
+          {onVolver && (
+            <button
+              className="pd-btn pd-btn-secondary"
+              type="button"
+              onClick={onVolver}
+            >
+              Volver
+            </button>
           )}
-
-          <button
-            type="submit"
-            className="panel-boton panel-boton-principal"
-          >
-            Entrar al panel
-          </button>
-
-          <button
-            type="button"
-            className="panel-boton panel-boton-secundario"
-            onClick={onVolver}
-          >
-            Volver al control
-          </button>
         </form>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="panel-duena">
-      <div className="panel-encabezado">
+    <main className="pd-app">
+      <header className="pd-header">
         <div>
-          <span className="panel-kicker">ADMINISTRACIÓN</span>
-          <h2>Panel Completo</h2>
-          <p>Elegí qué parte querés administrar.</p>
+          <p className="pd-eyebrow">BIBIGYM · ADMINISTRACIÓN</p>
+          <h1>Panel de la dueña</h1>
+          <p className="pd-muted">
+            Control de socios, cuotas y movimientos del gimnasio.
+          </p>
         </div>
 
-        <div className="panel-acciones">
-          <button
-            type="button"
-            className="panel-boton panel-boton-salir"
-            onClick={cerrarSesion}
-          >
+        <div className="pd-header-actions">
+          {onVolver && (
+            <button className="pd-btn pd-btn-secondary" onClick={onVolver}>
+              Volver al sistema
+            </button>
+          )}
+          <button className="pd-btn pd-btn-secondary" onClick={cerrarSesion}>
             Cerrar sesión
           </button>
         </div>
-      </div>
+      </header>
 
-      <nav className="panel-navegacion" aria-label="Secciones del panel">
-        <button
-          type="button"
-          className={seccion === "resumen" ? "panel-nav-activo" : ""}
-          onClick={() => setSeccion("resumen")}
-        >
-          <span>▦</span>
-          <strong>Resumen</strong>
-          <small>Vista general</small>
-        </button>
-
-        <button
-          type="button"
-          className={seccion === "socios" ? "panel-nav-activo" : ""}
-          onClick={() => setSeccion("socios")}
-        >
-          <span>♙</span>
-          <strong>Socios</strong>
-          <small>Ver y buscar socios</small>
-        </button>
-
-        <button
-          type="button"
-          className={seccion === "pagos" ? "panel-nav-activo" : ""}
-          onClick={() => setSeccion("pagos")}
-        >
-          <span>$</span>
-          <strong>Pagos</strong>
-          <small>Resumen de recaudación</small>
-        </button>
-
-        <button
-          type="button"
-          className={seccion === "configuracion" ? "panel-nav-activo" : ""}
-          onClick={() => setSeccion("configuracion")}
-        >
-          <span>⚙</span>
-          <strong>Configuración</strong>
-          <small>Precio mensual</small>
-        </button>
+      <nav className="pd-nav">
+        {[
+          ["resumen", "Resumen"],
+          ["socios", "Socios"],
+          ["pagos", "Pagos y movimientos"],
+        ].map(([id, texto]) => (
+          <button
+            key={id}
+            className={`pd-nav-btn ${seccion === id ? "active" : ""}`}
+            onClick={() => {
+              setSeccion(id);
+              setBusqueda("");
+            }}
+          >
+            {texto}
+          </button>
+        ))}
       </nav>
 
-      {/* RESUMEN */}
-
       {seccion === "resumen" && (
-        <section className="panel-seccion">
-          <div className="panel-seccion-titulo">
+        <section className="pd-section">
+          <div className="pd-section-heading">
             <div>
-              <span className="panel-kicker">RESUMEN</span>
-              <h3>Estado del gimnasio</h3>
-              <p>Información general de tus socios y pagos.</p>
+              <h2>Resumen general</h2>
+              <p className="pd-muted">Estado actual del gimnasio.</p>
+            </div>
+            <span className="pd-date">{fechaLegible(fechaHoy())}</span>
+          </div>
+
+          <div className="pd-stats-grid">
+            <article className="pd-stat-card">
+              <span>Total de socios</span>
+              <strong>{estadisticas.totalSocios}</strong>
+              <small>Registrados en el sistema</small>
+            </article>
+            <article className="pd-stat-card pd-stat-green">
+              <span>Cuotas al día</span>
+              <strong>{estadisticas.alDia}</strong>
+              <small>Más de 5 días hasta vencer</small>
+            </article>
+            <article className="pd-stat-card pd-stat-yellow">
+              <span>Por vencer</span>
+              <strong>{estadisticas.porVencer}</strong>
+              <small>Vencen dentro de 5 días</small>
+            </article>
+            <article className="pd-stat-card pd-stat-red">
+              <span>Cuotas vencidas</span>
+              <strong>{estadisticas.vencidos}</strong>
+              <small>Revisar pagos pendientes</small>
+            </article>
+          </div>
+
+          <div className="pd-panel">
+            <div className="pd-section-heading">
+              <div>
+                <h2>Recaudación del mes</h2>
+                <p className="pd-muted">
+                  Suma de los pagos registrados durante este mes.
+                </p>
+              </div>
+              <strong className="pd-revenue">
+                {dinero(estadisticas.recaudacion)}
+              </strong>
+            </div>
+
+            <div className="pd-income-grid">
+              <div className="pd-income-item">
+                <span>Efectivo</span>
+                <strong>{dinero(estadisticas.efectivo)}</strong>
+              </div>
+              <div className="pd-income-item">
+                <span>Transferencias / Mercado Pago</span>
+                <strong>{dinero(estadisticas.transferencias)}</strong>
+              </div>
+              <div className="pd-income-item">
+                <span>Otros medios</span>
+                <strong>{dinero(estadisticas.otrosMedios)}</strong>
+              </div>
+              <div className="pd-income-item">
+                <span>Pagos registrados este mes</span>
+                <strong>{estadisticas.pagosMes}</strong>
+              </div>
             </div>
           </div>
 
-          <div className="panel-estadisticas">
-            <article className="panel-stat">
-              <div className="panel-stat-icono">#</div>
+          <div className="pd-panel">
+            <div className="pd-section-heading">
               <div>
-                <span>Total de socios</span>
-                <strong>{estadisticas.total}</strong>
+                <h2>Socios que requieren atención</h2>
+                <p className="pd-muted">
+                  Cuotas vencidas, próximas a vencer o sin vencimiento cargado.
+                </p>
               </div>
-            </article>
+              <button
+                className="pd-btn pd-btn-secondary"
+                onClick={() => setSeccion("socios")}
+              >
+                Ver todos los socios
+              </button>
+            </div>
 
-            <article className="panel-stat">
-              <div className="panel-stat-icono panel-icono-verde">✓</div>
-              <div>
-                <span>Cuotas al día</span>
-                <strong>{estadisticas.alDia}</strong>
+            {socios.filter((s) => obtenerEstado(s) !== "Al día").length ===
+            0 ? (
+              <p className="pd-empty">No hay socios pendientes de revisión.</p>
+            ) : (
+              <div className="pd-table-wrap">
+                <table className="pd-table">
+                  <thead>
+                    <tr>
+                      <th>Socio</th>
+                      <th>DNI</th>
+                      <th>Vencimiento</th>
+                      <th>Estado</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {socios
+                      .filter((s) => obtenerEstado(s) !== "Al día")
+                      .sort((a, b) =>
+                        (a.fechaVencimiento || "").localeCompare(
+                          b.fechaVencimiento || ""
+                        )
+                      )
+                      .slice(0, 8)
+                      .map((socio, indice) => (
+                        <tr key={socio.dni || indice}>
+                          <td>{obtenerNombre(socio)}</td>
+                          <td>{socio.dni || "—"}</td>
+                          <td>{fechaLegible(socio.fechaVencimiento)}</td>
+                          <td>
+                            <span
+                              className={`pd-status pd-status-${obtenerEstado(
+                                socio
+                              )
+                                .toLowerCase()
+                                .replaceAll(" ", "-")}`}
+                            >
+                              {obtenerEstado(socio)}
+                            </span>
+                          </td>
+                          <td>
+                            <button
+                              className="pd-link-btn"
+                              onClick={() => abrirSocio(socio)}
+                            >
+                              Ver ficha
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
               </div>
-            </article>
-
-            <article className="panel-stat">
-              <div className="panel-stat-icono panel-icono-naranja">!</div>
-              <div>
-                <span>Vencen pronto</span>
-                <strong>{estadisticas.proximos}</strong>
-              </div>
-            </article>
-
-            <article className="panel-stat">
-              <div className="panel-stat-icono panel-icono-rojo">×</div>
-              <div>
-                <span>Vencidos</span>
-                <strong>{estadisticas.vencidos}</strong>
-              </div>
-            </article>
-
-            <article className="panel-stat panel-stat-grande">
-              <div className="panel-stat-icono">$</div>
-              <div>
-                <span>Recaudación del mes</span>
-                <strong>{formatearPrecio(estadisticas.recaudacion)}</strong>
-              </div>
-            </article>
+            )}
           </div>
-
-          {/* Se quitaron los accesos rápidos duplicados de abajo. */}
         </section>
       )}
 
-      {/* SOCIOS */}
-
       {seccion === "socios" && (
-        <section className="panel-seccion">
-          <div className="panel-seccion-titulo panel-titulo-con-controles">
+        <section className="pd-section">
+          <div className="pd-section-heading">
             <div>
-              <span className="panel-kicker">SOCIOS</span>
-              <h3>Lista de socios</h3>
-              <p>Buscá un socio para ver todos sus datos.</p>
+              <h2>Gestión de socios</h2>
+              <p className="pd-muted">
+                Información personal, actividades y estado de la cuota.
+              </p>
             </div>
-
-            <button
-              type="button"
-              className="panel-boton panel-boton-claro"
-              onClick={actualizar}
-            >
-              Actualizar lista
-            </button>
+            <span className="pd-count">
+              {sociosFiltrados.length} resultado(s)
+            </span>
           </div>
 
-          <div className="panel-busqueda-area">
-            <div className="panel-busqueda">
-              <span>⌕</span>
-              <input
-                type="search"
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                placeholder="Buscar por nombre, DNI o teléfono..."
-              />
-            </div>
-
+          <div className="pd-filters">
+            <input
+              type="search"
+              placeholder="Buscar por nombre, DNI o teléfono..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+            />
             <select
-              value={filtro}
-              onChange={(e) => setFiltro(e.target.value)}
+              value={filtroEstado}
+              onChange={(e) => setFiltroEstado(e.target.value)}
             >
-              <option value="todos">Todos los socios</option>
-              <option value="aldia">Al día</option>
-              <option value="proxima">Vencen pronto</option>
-              <option value="vencida">Vencidos</option>
+              <option>Todos</option>
+              <option>Al día</option>
+              <option>Por vencer</option>
+              <option>Vencido</option>
+              <option>Sin vencimiento</option>
             </select>
           </div>
 
           {sociosFiltrados.length === 0 ? (
-            <div className="panel-vacio">
-              <div>♡</div>
-              <h4>No encontramos socios</h4>
-              <p>Probá con otra búsqueda o filtro.</p>
+            <div className="pd-empty-card">
+              <h3>No se encontraron socios</h3>
+              <p>Probá cambiar la búsqueda o el filtro.</p>
             </div>
           ) : (
-            <div className="panel-socios-grid">
-              {sociosFiltrados.map((socio) => {
-                const estado = obtenerEstado(socio);
-                const ultimoPago = obtenerUltimoPago(socio);
-
-                return (
-                  <article className="socio-card" key={String(socio.dni)}>
-                    <div className="socio-card-top">
-                      <div className="socio-avatar">
-                        {String(socio.nombre || "S")
-                          .charAt(0)
-                          .toUpperCase()}
-                      </div>
-
-                      <div className="socio-nombre">
-                        <h4>{socio.nombre} {socio.apellido}</h4>
-                        <span>DNI {socio.dni}</span>
-                      </div>
-
-                      <span className={`panel-estado panel-estado-${estado.tipo}`}>
-                        {estado.texto}
-                      </span>
-                    </div>
-
-                    <div className="socio-card-datos">
-                      <div>
-                        <span>Teléfono</span>
-                        <strong>{socio.telefono || "—"}</strong>
-                      </div>
-
-                      <div>
-                        <span>Vencimiento</span>
-                        <strong>{formatearFecha(socio.fechaVencimiento)}</strong>
-                      </div>
-
-                      <div>
-                        <span>Último pago</span>
-                        <strong>
-                          {ultimoPago
-                            ? formatearPrecio(ultimoPago.importe)
-                            : "—"}
-                        </strong>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      className="socio-card-boton"
-                      onClick={() => setSocioSeleccionado(socio)}
-                    >
-                      Ver ficha completa
-                      <span>→</span>
-                    </button>
-                  </article>
-                );
-              })}
+            <div className="pd-table-wrap">
+              <table className="pd-table">
+                <thead>
+                  <tr>
+                    <th>Socio</th>
+                    <th>DNI</th>
+                    <th>Teléfono</th>
+                    <th>Plan</th>
+                    <th>Vencimiento</th>
+                    <th>Estado</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sociosFiltrados.map((socio, indice) => (
+                    <tr key={socio.dni || indice}>
+                      <td>{obtenerNombre(socio)}</td>
+                      <td>{socio.dni || "—"}</td>
+                      <td>{socio.telefono || "—"}</td>
+                      <td>{socio.nombrePlan || socio.plan || "Sin plan"}</td>
+                      <td>{fechaLegible(socio.fechaVencimiento)}</td>
+                      <td>
+                        <span
+                          className={`pd-status pd-status-${obtenerEstado(
+                            socio
+                          )
+                            .toLowerCase()
+                            .replaceAll(" ", "-")}`}
+                        >
+                          {obtenerEstado(socio)}
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          className="pd-link-btn"
+                          onClick={() => abrirSocio(socio)}
+                        >
+                          Ver ficha
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </section>
       )}
 
-      {/* PAGOS: SOLO TOTALES DEL MES */}
-
       {seccion === "pagos" && (
-        <section className="panel-seccion">
-          <div className="panel-seccion-titulo">
+        <section className="pd-section">
+          <div className="pd-section-heading">
             <div>
-              <span className="panel-kicker">PAGOS</span>
-              <h3>Recaudación del mes</h3>
-              <p>Totales de las cuotas cobradas durante el mes actual.</p>
-            </div>
-          </div>
-
-          <div className="pagos-resumen">
-            <div className="pago-total-mes">
-              <span>Ganancia total del mes</span>
-              <strong>{formatearPrecio(estadisticas.recaudacion)}</strong>
-            </div>
-
-            <div className="pago-total-efectivo">
-              <span>Total en efectivo</span>
-              <strong>{formatearPrecio(estadisticas.efectivo)}</strong>
-            </div>
-
-            <div className="pago-total-transferencias">
-              <span>Total en transferencias</span>
-              <strong>{formatearPrecio(estadisticas.transferencias)}</strong>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* CONFIGURACIÓN */}
-
-      {seccion === "configuracion" && (
-        <section className="panel-seccion">
-          <div className="panel-seccion-titulo">
-            <div>
-              <span className="panel-kicker">CONFIGURACIÓN</span>
-              <h3>Configuración del gimnasio</h3>
-              <p>Modificá los valores generales de BibiGym.</p>
-            </div>
-          </div>
-
-          <div className="config-card">
-            <div className="config-card-icono">$</div>
-
-            <div className="config-card-texto">
-              <h4>Precio de la mensualidad</h4>
-              <p>
-                Este importe se utilizará automáticamente cuando registres nuevos socios.
+              <h2>Pagos y movimientos</h2>
+              <p className="pd-muted">
+                Consultá los pagos registrados y filtrá por fecha o medio de pago.
               </p>
             </div>
+            <strong className="pd-revenue">
+              {dinero(
+                movimientosFiltrados.reduce((total, p) => total + p.importe, 0)
+              )}
+            </strong>
+          </div>
 
-            <div className="config-card-form">
-              <label htmlFor="precio-mensual">Precio actual</label>
 
-              <div className="config-precio">
-                <span>$</span>
-                <input
-                  id="precio-mensual"
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={precio}
-                  onChange={(e) => {
-                    setPrecio(e.target.value);
-                    setMensajePrecio("");
-                  }}
-                />
-              </div>
+<div className="pd-filters pd-filters-multiple">
+  <input
+    type="search"
+    placeholder="Buscar socio, DNI o concepto..."
+    value={busqueda}
+    onChange={(e) => setBusqueda(e.target.value)}
+  />
 
-              <button
-                type="button"
-                className="panel-boton panel-boton-principal"
-                onClick={guardarPrecio}
-              >
-                Guardar precio
-              </button>
+  <input
+    type="date"
+    value={fechaSeleccionada}
+    onChange={(e) => setFechaSeleccionada(e.target.value)}
+    aria-label="Seleccionar fecha de los pagos"
+  />
 
-              {mensajePrecio && (
-                <p className="config-mensaje">{mensajePrecio}</p>
+  <select
+    value={filtroMetodo}
+    onChange={(e) => setFiltroMetodo(e.target.value)}
+  >
+    <option value="Todos">Todos los medios</option>
+    <option value="Efectivo">Efectivo</option>
+    <option value="Transferencia">Transferencia</option>
+  </select>
+</div>
+
+
+          <div className="pd-panel pd-panel-flush">
+            <div className="pd-table-wrap">
+              <table className="pd-table">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Socio</th>
+                    <th>DNI</th>
+                    <th>Concepto</th>
+                    <th>Forma de pago</th>
+                    <th>Importe</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {movimientosFiltrados.map((pago) => (
+                    <tr key={pago.pagoId}>
+                      <td>{fechaLegible(pago.fecha)}</td>
+                      <td>{pago.socioNombre}</td>
+                      <td>{pago.dni || "—"}</td>
+                      <td>{pago.concepto || "Pago"}</td>
+                      <td>{pago.formaPago || "No especificado"}</td>
+                      <td className="pd-amount">{dinero(pago.importe)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {movimientosFiltrados.length === 0 && (
+                <p className="pd-empty">
+                  No hay pagos que coincidan con esos filtros.
+                </p>
               )}
             </div>
           </div>
 
-          <div className="config-info">
-            <h4>Información</h4>
-            <p>
-              Los datos de socios, pagos y configuración se guardan localmente en este navegador.
-            </p>
-          </div>
+          <p className="pd-footnote">
+            La recaudación refleja los pagos guardados en el historial de cada
+            socio. Los pagos que no tengan fecha o forma de pago pueden quedar
+            fuera de algunos filtros o de los subtotales por medio de pago.
+          </p>
         </section>
       )}
 
-      {/* FICHA DEL SOCIO */}
-
       {socioSeleccionado && (
-        <div className="panel-modal-overlay">
-          <section className="panel-modal">
-            <button
-              type="button"
-              className="panel-modal-cerrar"
-              onClick={() => setSocioSeleccionado(null)}
-              aria-label="Cerrar ficha"
-            >
-              ×
-            </button>
-
-            <div className="panel-modal-cabecera">
-              <div className="panel-modal-avatar">
-                {String(socioSeleccionado.nombre || "S")
-                  .charAt(0)
-                  .toUpperCase()}
-              </div>
-
+        <div
+          className="pd-modal-backdrop"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              setSocioSeleccionado(null);
+              setConfirmarEliminar(false);
+            }
+          }}
+        >
+          <section
+            className="pd-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="pd-modal-title"
+          >
+            <div className="pd-modal-header">
               <div>
-                <span className="panel-kicker">FICHA DEL SOCIO</span>
-                <h3>{socioSeleccionado.nombre} {socioSeleccionado.apellido}</h3>
-                <p>DNI: {socioSeleccionado.dni}</p>
+                <p className="pd-eyebrow">FICHA DEL SOCIO</p>
+                <h2 id="pd-modal-title">{obtenerNombre(socioSeleccionado)}</h2>
+                <span
+                  className={`pd-status pd-status-${obtenerEstado(
+                    socioSeleccionado
+                  )
+                    .toLowerCase()
+                    .replaceAll(" ", "-")}`}
+                >
+                  {obtenerEstado(socioSeleccionado)}
+                </span>
               </div>
+              <button
+                className="pd-close"
+                onClick={() => {
+                  setSocioSeleccionado(null);
+                  setConfirmarEliminar(false);
+                }}
+                aria-label="Cerrar ficha"
+              >
+                ×
+              </button>
             </div>
 
-            <div className="panel-detalles">
+            <div className="pd-details-grid">
+              <div>
+                <span>DNI</span>
+                <strong>{socioSeleccionado.dni || "—"}</strong>
+              </div>
               <div>
                 <span>Teléfono</span>
                 <strong>{socioSeleccionado.telefono || "—"}</strong>
               </div>
-
-              <div>
-                <span>Plan</span>
-                <strong>{socioSeleccionado.plan || "Mensual"}</strong>
-              </div>
-
               <div>
                 <span>Fecha de alta</span>
-                <strong>{formatearFecha(socioSeleccionado.fechaAlta)}</strong>
+                <strong>{fechaLegible(socioSeleccionado.fechaAlta)}</strong>
               </div>
-
               <div>
                 <span>Vencimiento</span>
-                <strong>{formatearFecha(socioSeleccionado.fechaVencimiento)}</strong>
+                <strong>
+                  {fechaLegible(socioSeleccionado.fechaVencimiento)}
+                </strong>
+              </div>
+              <div>
+                <span>Plan</span>
+                <strong>
+                  {socioSeleccionado.nombrePlan ||
+                    socioSeleccionado.plan ||
+                    "Sin plan"}
+                </strong>
+              </div>
+              <div>
+                <span>Precio mensual registrado</span>
+                <strong>
+                  {dinero(
+                    socioSeleccionado.totalMensual ??
+                      socioSeleccionado.precioPlan ??
+                      0
+                  )}
+                </strong>
               </div>
             </div>
 
-            <div className="panel-historial">
-              <div className="panel-historial-titulo">
-                <h4>Historial de pagos</h4>
-                <span>
-                  {Array.isArray(socioSeleccionado.pagos)
-                    ? socioSeleccionado.pagos.length
-                    : 0}{" "}
-                  pagos
-                </span>
-              </div>
-
-              {!Array.isArray(socioSeleccionado.pagos) ||
-              socioSeleccionado.pagos.length === 0 ? (
-                <div className="panel-historial-vacio">
-                  No hay pagos registrados.
+            <div className="pd-detail-block">
+              <h3>Actividades</h3>
+              {Array.isArray(socioSeleccionado.actividades) &&
+              socioSeleccionado.actividades.length > 0 ? (
+                <div className="pd-tags">
+                  {socioSeleccionado.actividades.map((actividad, i) => (
+                    <span key={`${actividad}-${i}`}>{actividad}</span>
+                  ))}
                 </div>
               ) : (
-                <div className="panel-pagos">
-                  {[...socioSeleccionado.pagos]
-                    .reverse()
-                    .map((pago, indice) => (
-                      <div
-                        className="panel-pago"
-                        key={`${pago.fecha}-${indice}`}
-                      >
-                        <div>
-                          <strong>{pago.concepto || "Pago"}</strong>
-                          <span>
-                            {formatearFecha(pago.fecha)} ·{" "}
-                            {pago.formaPago || "Sin forma"}
-                          </span>
-                        </div>
+                <p className="pd-muted">
+                  {socioSeleccionado.detalleActividades ||
+                    "No hay actividades registradas."}
+                </p>
+              )}
+            </div>
 
-                        <strong>{formatearPrecio(pago.importe)}</strong>
-                      </div>
-                    ))}
+            <div className="pd-detail-block">
+              <h3>Historial de pagos ({pagosDelSocio.length})</h3>
+              {pagosDelSocio.length === 0 ? (
+                <p className="pd-empty">Este socio no tiene pagos registrados.</p>
+              ) : (
+                <div className="pd-table-wrap">
+                  <table className="pd-table">
+                    <thead>
+                      <tr>
+                        <th>Fecha</th>
+                        <th>Concepto</th>
+                        <th>Medio</th>
+                        <th>Importe</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pagosDelSocio.map((pago) => (
+                        <tr key={pago._indice}>
+                          <td>{fechaLegible(pago.fecha)}</td>
+                          <td>{pago.concepto || "Pago"}</td>
+                          <td>{pago.formaPago || "No especificado"}</td>
+                          <td className="pd-amount">{dinero(pago.importe)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
 
-            <div className="panel-modal-acciones">
+            <div className="pd-modal-footer">
+              {!confirmarEliminar ? (
+                <button
+                  className="pd-btn pd-btn-danger"
+                  onClick={() => setConfirmarEliminar(true)}
+                >
+                  Eliminar socio
+                </button>
+              ) : (
+                <div className="pd-confirm-delete">
+                  <p>
+                    ¿Seguro que querés eliminar a este socio y su historial
+                    guardado en este navegador?
+                  </p>
+                  <button className="pd-btn pd-btn-danger" onClick={eliminarSocio}>
+                    Sí, eliminar
+                  </button>
+                  <button
+                    className="pd-btn pd-btn-secondary"
+                    onClick={() => setConfirmarEliminar(false)}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              )}
               <button
-                type="button"
-                className="panel-boton panel-boton-secundario"
-                onClick={() => setSocioSeleccionado(null)}
+                className="pd-btn pd-btn-secondary"
+                onClick={() => {
+                  setSocioSeleccionado(null);
+                  setConfirmarEliminar(false);
+                }}
               >
-                Cerrar
-              </button>
-
-              <button
-                type="button"
-                className="panel-boton panel-boton-eliminar"
-                onClick={() => eliminarSocio(socioSeleccionado)}
-              >
-                Eliminar socio
+                Cerrar ficha
               </button>
             </div>
           </section>
         </div>
       )}
-    </div>
+    </main>
   );
 }
-
-export default PanelDueña;

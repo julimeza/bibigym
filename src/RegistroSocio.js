@@ -1,31 +1,128 @@
 
 import "./RegistroSocio.css";
 
+const PLANES_MENSUALES = [
+  {
+    id: "pesas_personalizadas",
+    nombre: "Pesas personalizadas — Mensual",
+    precio: 27000,
+  },
+  {
+    id: "pesas_personalizadas_3_dias",
+    nombre: "Pesas personalizadas — 3 días",
+    precio: 21000,
+  },
+  {
+    id: "pesas_sin_personalizado_3_dias",
+    nombre: "Pesas sin personalización — 3 días",
+    precio: 15000,
+  },
+  {
+    id: "pase_libre",
+    nombre: "Pase Libre",
+    precio: 35000,
+  },
+];
+
+const ACTIVIDADES = [
+  { id: "spinning", nombre: "Spinning", precio: 27000 },
+  { id: "trampolin", nombre: "Trampolín", precio: 25000 },
+  { id: "aerobics", nombre: "Aerobics", precio: 15000 },
+  { id: "box", nombre: "Box", precio: 15000 },
+  {
+    id: "barra_funcional",
+    nombre: "Barra funcional",
+    precio: 15000,
+  },
+  { id: "crossfit", nombre: "CrossFit", precio: 15000 },
+];
+
+const CLASES_SUELTAS = [
+  { id: "trampolin_suelto", nombre: "Trampolín", precio: 3000 },
+  { id: "pesas_suelta", nombre: "Pesas", precio: 3000 },
+  { id: "aerobics_suelto", nombre: "Aerobics", precio: 2500 },
+  { id: "spinning_suelto", nombre: "Spinning", precio: 4000 },
+];
+
+const formatearPrecio = (importe) =>
+  Number(importe || 0).toLocaleString("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    maximumFractionDigits: 0,
+  });
+
 function RegistroSocio({
   datos,
   manejarCambio,
   guardarSocio,
   mensaje,
   volverInicio,
-  precioMensual = 30000,
-  nuevoPrecio,
-  setNuevoPrecio,
-  mostrarConfiguracion,
-  setMostrarConfiguracion,
-  guardarNuevoPrecio,
-  mensajePrecio,
-  setMensajePrecio,
 }) {
-  const precioFormateado = Number(precioMensual).toLocaleString("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  });
+  const planSeleccionado =
+    PLANES_MENSUALES.find(
+      (plan) => plan.id === datos.plan
+    ) || PLANES_MENSUALES[0];
 
-  const alternarEdicionPrecio = () => {
-    setMensajePrecio("");
-    setNuevoPrecio(String(precioMensual));
-    setMostrarConfiguracion((anterior) => !anterior);
+  const actividadesSeleccionadas = Array.isArray(
+    datos.actividades
+  )
+    ? datos.actividades
+    : [];
+
+  const totalActividades = ACTIVIDADES
+    .filter((actividad) =>
+      actividadesSeleccionadas.includes(actividad.id)
+    )
+    .reduce(
+      (total, actividad) => total + actividad.precio,
+      0
+    );
+
+  const totalMensual =
+    planSeleccionado.precio + totalActividades;
+
+    const clasesSueltasSeleccionadas = CLASES_SUELTAS.filter(
+  (clase) =>
+    Array.isArray(datos.clasesSueltas) &&
+    datos.clasesSueltas.includes(clase.id)
+);
+
+const totalClasesSueltas = clasesSueltasSeleccionadas.reduce(
+  (total, clase) => total + clase.precio,
+  0
+);
+
+const alternarClaseSuelta = (id) => {
+  const clasesActuales = Array.isArray(datos.clasesSueltas)
+    ? datos.clasesSueltas
+    : [];
+
+  const nuevasClases = clasesActuales.includes(id)
+    ? clasesActuales.filter((claseId) => claseId !== id)
+    : [...clasesActuales, id];
+
+  manejarCambio({
+    target: {
+      name: "clasesSueltas",
+      value: nuevasClases,
+    },
+  });
+};
+
+
+  const alternarActividad = (id) => {
+    const nuevasActividades = actividadesSeleccionadas.includes(id)
+      ? actividadesSeleccionadas.filter(
+          (actividadId) => actividadId !== id
+        )
+      : [...actividadesSeleccionadas, id];
+
+    manejarCambio({
+      target: {
+        name: "actividades",
+        value: nuevasActividades,
+      },
+    });
   };
 
   return (
@@ -107,20 +204,34 @@ function RegistroSocio({
           </div>
 
           <div className="registro-campo">
-            <label htmlFor="plan">Plan</label>
+            <label htmlFor="plan">
+              Plan mensual <span>*</span>
+            </label>
+
             <div className="registro-select-contenedor">
-              <select id="plan" name="plan" value="Mensual" disabled>
-                <option value="Mensual">Mensual</option>
+              <select
+                id="plan"
+                name="plan"
+                value={datos.plan || PLANES_MENSUALES[0].id}
+                onChange={manejarCambio}
+                required
+              >
+                {PLANES_MENSUALES.map((plan) => (
+                  <option key={plan.id} value={plan.id}>
+                    {plan.nombre} — {formatearPrecio(plan.precio)}
+                  </option>
+                ))}
               </select>
               <span aria-hidden="true">⌄</span>
             </div>
-            <small>Plan inicial de inscripción</small>
+            <small>Seleccioná un plan base mensual.</small>
           </div>
 
           <div className="registro-campo">
             <label htmlFor="formaPago">
               Forma de pago <span>*</span>
             </label>
+
             <div className="registro-select-contenedor">
               <select
                 id="formaPago"
@@ -150,59 +261,115 @@ function RegistroSocio({
               required
             />
           </div>
-
-          <div className="registro-campo registro-precio">
-            <label>Precio de la mensualidad</label>
-
-            <div className="registro-precio-linea">
-              <div className="registro-precio-valor">
-                {precioFormateado}
-              </div>
-
-              <button
-                type="button"
-                className="registro-precio-editar"
-                onClick={alternarEdicionPrecio}
-              >
-                {mostrarConfiguracion ? "Cancelar edición" : "Editar precio"}
-              </button>
-            </div>
-
-            <small>Tarifa vigente del gimnasio</small>
-
-            {mensajePrecio && (
-              <p className="registro-precio-mensaje" role="status">
-                {mensajePrecio}
-              </p>
-            )}
-
-            {mostrarConfiguracion && (
-              <div className="registro-edicion-precio">
-                <label htmlFor="nuevoPrecioRegistro">
-                  Nuevo precio mensual ($)
-                </label>
-
-                <input
-                  id="nuevoPrecioRegistro"
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={nuevoPrecio}
-                  onChange={(e) => setNuevoPrecio(e.target.value)}
-                  required
-                />
-
-                <button
-                  type="button"
-                  className="registro-precio-guardar"
-                  onClick={guardarNuevoPrecio}
-                >
-                  Guardar precio
-                </button>
-              </div>
-            )}
-          </div>
         </div>
+
+        <section className="registro-actividades">
+          <div className="registro-actividades-encabezado">
+            <h3>Actividades adicionales</h3>
+            <p>
+              Podés seleccionar una o varias actividades mensuales.
+              Se sumarán al precio del plan base.
+            </p>
+          </div>
+
+          <div className="registro-actividades-lista">
+            {ACTIVIDADES.map((actividad) => {
+              const seleccionada =
+                actividadesSeleccionadas.includes(actividad.id);
+
+              return (
+                <label
+                  key={actividad.id}
+                  className={`registro-actividad-opcion ${
+                    seleccionada ? "seleccionada" : ""
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={seleccionada}
+                    onChange={() => alternarActividad(actividad.id)}
+                  />
+
+                  <span className="registro-actividad-texto">
+                    <strong>{actividad.nombre}</strong>
+                    <small>Mensual</small>
+                  </span>
+
+                  <span className="registro-actividad-precio">
+                    {formatearPrecio(actividad.precio)}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="registro-actividades">
+  <div className="registro-actividades-encabezado">
+    <h3>Clases sueltas</h3>
+    <p>
+      Seleccioná las clases que se cobran por separado.
+      No se suman a la mensualidad.
+    </p>
+  </div>
+
+  <div className="registro-actividades-lista">
+    {CLASES_SUELTAS.map((clase) => {
+      const seleccionada =
+        Array.isArray(datos.clasesSueltas) &&
+        datos.clasesSueltas.includes(clase.id);
+
+      return (
+        <label
+          key={clase.id}
+          className={`registro-actividad-opcion ${
+            seleccionada ? "seleccionada" : ""
+          }`}
+        >
+          <input
+            type="checkbox"
+            checked={seleccionada}
+            onChange={() => alternarClaseSuelta(clase.id)}
+          />
+
+          <span className="registro-actividad-texto">
+            <strong>{clase.nombre}</strong>
+            <small>Clase suelta</small>
+          </span>
+
+          <span className="registro-actividad-precio">
+            {formatearPrecio(clase.precio)}
+          </span>
+        </label>
+      );
+    })}
+  </div>
+
+  <div className="registro-total">
+    <div className="registro-total-final">
+      <span>Total de clases sueltas</span>
+      <strong>{formatearPrecio(totalClasesSueltas)}</strong>
+    </div>
+  </div>
+</section>
+
+        <section className="registro-total">
+          <div>
+            <span>Plan base</span>
+            <strong>{formatearPrecio(planSeleccionado.precio)}</strong>
+          </div>
+
+          <div>
+            <span>Actividades adicionales</span>
+            <strong>{formatearPrecio(totalActividades)}</strong>
+          </div>
+
+          <div className="registro-total-final">
+            <span>Total mensual</span>
+            <strong>{formatearPrecio(totalMensual)}</strong>
+          </div>
+        </section>
+
 
         {mensaje && (
           <div

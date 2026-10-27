@@ -7,6 +7,58 @@ import PanelDueña from "./PanelDueña";
 const CLAVE_SOCIOS = "bibigym_socios";
 const CLAVE_PRECIO = "bibigym_precio_mensual";
 
+
+const PRECIOS_PLANES = {
+  pesas_personalizadas: 27000,
+  pesas_personalizadas_3_dias: 21000,
+  pesas_sin_personalizado_3_dias: 15000,
+  pase_libre: 35000,
+};
+
+const NOMBRES_PLANES = {
+  pesas_personalizadas: "Pesas personalizadas — Mensual",
+  pesas_personalizadas_3_dias: "Pesas personalizadas — 3 días",
+  pesas_sin_personalizado_3_dias:
+    "Pesas sin personalización — 3 días",
+  pase_libre: "Pase Libre",
+};
+
+const PRECIOS_ACTIVIDADES = {
+  spinning: 27000,
+  trampolin: 25000,
+  aerobics: 15000,
+  box: 15000,
+  barra_funcional: 15000,
+  crossfit: 15000,
+};
+
+const NOMBRES_ACTIVIDADES = {
+  spinning: "Spinning",
+  trampolin: "Trampolín",
+  aerobics: "Aerobics",
+  box: "Box",
+  barra_funcional: "Barra funcional",
+  crossfit: "CrossFit",
+};
+
+const PRECIOS_CLASES_SUELTAS = {
+  trampolin_suelto: 3000,
+  pesas_suelta: 3000,
+  aerobics_suelto: 2500,
+  spinning_suelto: 4000,
+};
+
+const NOMBRES_CLASES_SUELTAS = {
+  trampolin_suelto: "Trampolín (clase suelta)",
+  pesas_suelta: "Pesas (clase suelta)",
+  aerobics_suelto: "Aerobics (clase suelta)",
+  spinning_suelto: "Spinning (clase suelta)",
+};
+
+const normalizarDNI = (valor) =>
+  String(valor || "").replace(/\D/g, "");
+
+
 const obtenerFechaActual = () => {
   const fecha = new Date();
 
@@ -29,15 +81,19 @@ const leerPrecioGuardado = () => {
   }
 };
 
+
 const datosIniciales = {
   nombre: "",
   apellido: "",
   dni: "",
   telefono: "",
-  plan: "Mensual",
+  plan: "pesas_personalizadas",
+  actividades: [],
+  clasesSueltas: [],
   formaPago: "",
   fechaAlta: obtenerFechaActual(),
 };
+
 
 const obtenerSocios = () => {
   try {
@@ -217,6 +273,12 @@ function App() {
   const [mensajePago, setMensajePago] =
     useState("");
 
+    const [planRenovacion, setPlanRenovacion] =
+  useState("pesas_personalizadas");
+
+const [actividadesRenovacion, setActividadesRenovacion] =
+  useState([]);
+
   const [mensajePrecio, setMensajePrecio] =
     useState("");
 
@@ -233,7 +295,7 @@ function App() {
 
     const encontrado = obtenerSocios().find(
       (item) =>
-        String(item.dni).trim() === dniBuscado
+        normalizarDNI(item.dni) === normalizarDNI(dniBuscado)
     );
 
     if (!encontrado) {
@@ -315,44 +377,98 @@ function App() {
 
     const socios = obtenerSocios();
 
-    if (
-      socios.some(
-        (item) =>
-          String(item.dni).trim() ===
-          dniNuevo
+
+if (
+  socios.some(
+    (item) =>
+      normalizarDNI(item.dni) === normalizarDNI(dniNuevo)
+  )
+) {
+  setMensaje(
+    "Ya existe un socio registrado con ese DNI. Verificá los datos."
+  );
+
+  return;
+}
+
+
+
+const fechaPago =
+  socio.fechaAlta || obtenerFechaActual();
+
+const planId = PRECIOS_PLANES[socio.plan]
+  ? socio.plan
+  : "pesas_personalizadas";
+
+const actividadesElegidas = Array.isArray(socio.actividades)
+  ? [...new Set(socio.actividades)].filter(
+      (id) => Object.prototype.hasOwnProperty.call(
+        PRECIOS_ACTIVIDADES,
+        id
       )
-    ) {
-      setMensaje(
-        "Ya existe un socio registrado con ese DNI. Verificá los datos."
-      );
+    )
+  : [];
 
-      return;
-    }
+const precioPlan = PRECIOS_PLANES[planId];
 
-    const fechaPago =
-      socio.fechaAlta ||
-      obtenerFechaActual();
+const detalleActividades = actividadesElegidas.map((id) => ({
+  id,
+  nombre: NOMBRES_ACTIVIDADES[id],
+  precioMensual: PRECIOS_ACTIVIDADES[id],
+}));
 
-    const nuevoSocio = {
-      ...socio,
+const totalActividades = detalleActividades.reduce(
+  (total, actividad) => total + actividad.precioMensual,
+  0
+);
 
-      dni: dniNuevo,
+const totalMensual = precioPlan + totalActividades;
 
-      fechaAlta: fechaPago,
+const clasesSueltasElegidas = Array.isArray(socio.clasesSueltas)
+  ? [...new Set(socio.clasesSueltas)].filter(
+      (id) =>
+        Object.prototype.hasOwnProperty.call(
+          PRECIOS_CLASES_SUELTAS,
+          id
+        )
+    )
+  : [];
 
-      fechaVencimiento:
-        sumarUnMes(fechaPago),
+const pagosIniciales = [
+  {
+    fecha: fechaPago,
+    importe: totalMensual,
+    formaPago: socio.formaPago,
+    concepto: "Inscripción / primera cuota",
+  },
+  ...clasesSueltasElegidas.map((id) => ({
+    fecha: fechaPago,
+    importe: PRECIOS_CLASES_SUELTAS[id],
+    formaPago: socio.formaPago,
+    concepto: `Clase suelta: ${NOMBRES_CLASES_SUELTAS[id]}`,
+  })),
+];
 
-      pagos: [
-        {
-          fecha: fechaPago,
-          importe: precioMensual,
-          formaPago: socio.formaPago,
-          concepto:
-            "Inscripción / primera cuota",
-        },
-      ],
-    };
+const nuevoSocio = {
+  ...socio,
+
+  dni: dniNuevo,
+
+  plan: planId,
+  nombrePlan: NOMBRES_PLANES[planId],
+  precioPlan,
+  actividades: actividadesElegidas,
+  detalleActividades,
+  totalMensual,
+
+  clasesSueltas: [],
+
+  fechaAlta: fechaPago,
+  fechaVencimiento: sumarUnMes(fechaPago),
+
+  pagos: pagosIniciales,
+};
+
 
     try {
       guardarSocios([
@@ -414,111 +530,152 @@ function App() {
     }
   };
 
-  const abrirPago = () => {
-    setImportePago(
-      String(precioMensual)
-    );
 
-    setFormaPago("Efectivo");
 
-    setMensajePago("");
+const abrirPago = () => {
+  if (!socioEncontrado) return;
 
-    setMostrarPago(true);
-  };
+  const planActual = PRECIOS_PLANES[socioEncontrado.plan]
+    ? socioEncontrado.plan
+    : "pesas_personalizadas";
 
-  const registrarPago = (e) => {
-    e.preventDefault();
-
-    if (!socioEncontrado) {
-      return;
-    }
-
-    const importe = Number(
-      importePago
-    );
-
-    if (
-      !Number.isFinite(importe) ||
-      importe <= 0
-    ) {
-      setMensajePago(
-        "Ingresá un importe válido."
-      );
-
-      return;
-    }
-
-    const socios = obtenerSocios();
-
-    const indice = socios.findIndex(
-      (item) =>
-        String(item.dni).trim() ===
-        String(
-          socioEncontrado.dni
-        ).trim()
-    );
-
-    if (indice === -1) {
-      setMensajePago(
-        "No se encontró al socio para actualizar su cuota."
-      );
-
-      return;
-    }
-
-    const fechaPago =
-      obtenerFechaActual();
-
-    const socioActual =
-      socios[indice];
-
-    const pagoNuevo = {
-      fecha: fechaPago,
-      importe,
-      formaPago,
-      concepto:
-        "Renovación mensual",
-    };
-
-    const socioActualizado = {
-      ...socioActual,
-
-      fechaVencimiento:
-        sumarUnMes(fechaPago),
-
-      pagos: [
-        ...(Array.isArray(
-          socioActual.pagos
+  const actividadesActuales = Array.isArray(
+    socioEncontrado.actividades
+  )
+    ? socioEncontrado.actividades.filter((id) =>
+        Object.prototype.hasOwnProperty.call(
+          PRECIOS_ACTIVIDADES,
+          id
         )
-          ? socioActual.pagos
-          : []),
-        pagoNuevo,
-      ],
-    };
+      )
+    : Array.isArray(socioEncontrado.detalleActividades)
+    ? socioEncontrado.detalleActividades
+        .map((actividad) => actividad.id)
+        .filter((id) =>
+          Object.prototype.hasOwnProperty.call(
+            PRECIOS_ACTIVIDADES,
+            id
+          )
+        )
+    : [];
 
-    socios[indice] =
-      socioActualizado;
+  setPlanRenovacion(planActual);
+  setActividadesRenovacion(actividadesActuales);
+  setImportePago("");
+  setFormaPago("Efectivo");
+  setMensajePago("");
+  setMostrarPago(true);
+};
 
-    try {
-      guardarSocios(socios);
-    } catch {
-      setMensajePago(
-        "No se pudo guardar el pago en este navegador."
-      );
+const calcularTotalRenovacion = () => {
+  const precioPlan = PRECIOS_PLANES[planRenovacion] || 0;
 
-      return;
-    }
+  const precioActividades = actividadesRenovacion.reduce(
+    (total, id) =>
+      total + (PRECIOS_ACTIVIDADES[id] || 0),
+    0
+  );
 
-    setSocioEncontrado(
-      socioActualizado
+  return precioPlan + precioActividades;
+};
+
+const cambiarActividadRenovacion = (id) => {
+  setActividadesRenovacion((actuales) =>
+    actuales.includes(id)
+      ? actuales.filter((actividad) => actividad !== id)
+      : [...actuales, id]
+  );
+};
+
+
+
+
+const registrarPago = (e) => {
+  e.preventDefault();
+
+  if (!socioEncontrado) return;
+
+  if (!PRECIOS_PLANES[planRenovacion]) {
+    setMensajePago("Seleccioná un plan mensual válido.");
+    return;
+  }
+
+  if (!formaPago) {
+    setMensajePago("Seleccioná una forma de pago.");
+    return;
+  }
+
+  const importe = calcularTotalRenovacion();
+
+  if (importe <= 0) {
+    setMensajePago("El importe debe ser mayor que cero.");
+    return;
+  }
+
+  const socios = obtenerSocios();
+
+  const indice = socios.findIndex(
+    (item) =>
+      normalizarDNI(item.dni) ===
+      normalizarDNI(socioEncontrado.dni)
+  );
+
+  if (indice === -1) {
+    setMensajePago(
+      "No se encontró al socio para actualizar su cuota."
     );
+    return;
+  }
 
-    setMostrarPago(false);
+  const fechaPago = obtenerFechaActual();
+  const socioActual = socios[indice];
 
-    setMensaje(
-      "Pago registrado y cuota renovada correctamente."
-    );
+  const detalleActividades = actividadesRenovacion.map((id) => ({
+    id,
+    nombre: NOMBRES_ACTIVIDADES[id],
+    precioMensual: PRECIOS_ACTIVIDADES[id],
+  }));
+
+  const pagoNuevo = {
+    fecha: fechaPago,
+    importe,
+    formaPago,
+    concepto: "Renovación mensual",
   };
+
+  const socioActualizado = {
+    ...socioActual,
+    plan: planRenovacion,
+    nombrePlan: NOMBRES_PLANES[planRenovacion],
+    precioPlan: PRECIOS_PLANES[planRenovacion],
+    actividades: [...actividadesRenovacion],
+    detalleActividades,
+    totalMensual: importe,
+    fechaVencimiento: sumarUnMes(fechaPago),
+    pagos: [
+      ...(Array.isArray(socioActual.pagos)
+        ? socioActual.pagos
+        : []),
+      pagoNuevo,
+    ],
+  };
+
+  socios[indice] = socioActualizado;
+
+  try {
+    guardarSocios(socios);
+  } catch {
+    setMensajePago(
+      "No se pudieron guardar los cambios en este navegador."
+    );
+    return;
+  }
+
+  setSocioEncontrado(socioActualizado);
+  setMostrarPago(false);
+  setMensaje("Cuota renovada y datos actualizados correctamente.");
+};
+
 
   const volverInicio = () => {
     setMensaje("");
@@ -730,32 +887,74 @@ function App() {
                       )}
                     </div>
 
-                    <div className="pago-resumen">
-                      <p>
-                        <strong>
-                          Mensualidad actual:
-                        </strong>{" "}
-                        {formatearPrecio(
-                          precioMensual
-                        )}
-                      </p>
 
-                      <p>
-                        <strong>
-                          Última forma de pago:
-                        </strong>{" "}
-                        {historialPagos[0]
-                          ?.formaPago ||
-                          "Sin información"}
-                      </p>
-                    </div>
+<div className="pago-resumen pago-resumen-socia">
+  <div className="pago-dato">
+    <span className="pago-dato-etiqueta">DNI</span>
+    <strong>{socioEncontrado.dni}</strong>
+  </div>
+
+  <div className="pago-dato">
+    <span className="pago-dato-etiqueta">PLAN CONTRATADO</span>
+    <strong>
+      {socioEncontrado.nombrePlan ||
+        NOMBRES_PLANES[socioEncontrado.plan] ||
+        "Sin información"}
+    </strong>
+  </div>
+
+  <div className="pago-dato pago-dato-actividades">
+    <span className="pago-dato-etiqueta">
+      ACTIVIDADES ADICIONALES
+    </span>
+
+    {Array.isArray(socioEncontrado.detalleActividades) &&
+    socioEncontrado.detalleActividades.length > 0 ? (
+      <div className="pago-lista-actividades">
+        {socioEncontrado.detalleActividades.map((actividad) => (
+          <span
+            className="pago-actividad-etiqueta"
+            key={actividad.id}
+          >
+            {actividad.nombre}
+          </span>
+        ))}
+      </div>
+    ) : (
+      <span className="pago-sin-actividades">
+        Sin actividades adicionales
+      </span>
+    )}
+  </div>
+
+  <div className="pago-mensualidad">
+    <span>Mensualidad total</span>
+    <strong>
+      {formatearPrecio(
+        socioEncontrado.totalMensual ??
+          socioEncontrado.precioPlan ??
+          precioMensual
+      )}
+    </strong>
+  </div>
+
+  <div className="pago-dato pago-dato-forma">
+    <span className="pago-dato-etiqueta">
+      ÚLTIMA FORMA DE PAGO
+    </span>
+    <strong>
+      {historialPagos[0]?.formaPago || "Sin información"}
+    </strong>
+  </div>
+</div>
+
 
                     <button
                       type="button"
                       className="boton boton-primario boton-renovar"
                       onClick={abrirPago}
                     >
-                      Registrar pago y renovar
+                      Renovar cuota
                     </button>
 
                     <button
@@ -872,86 +1071,102 @@ function App() {
                 }
               </h2>
 
-              <form
-                className="formulario-pago"
-                onSubmit={
-                  registrarPago
-                }
-              >
-                <label htmlFor="importePago">
-                  Importe recibido ($)
-                </label>
 
-                <input
-                  id="importePago"
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={importePago}
-                  onChange={(e) =>
-                    setImportePago(
-                      e.target.value
-                    )
-                  }
-                  required
-                />
+<form
+  className="formulario-pago"
+  onSubmit={registrarPago}
+>
+  <label htmlFor="planRenovacion">
+    Plan mensual
+  </label>
 
-                <label htmlFor="formaPagoRenovacion">
-                  Forma de pago
-                </label>
+  <select
+    id="planRenovacion"
+    value={planRenovacion}
+    onChange={(e) => {
+      setPlanRenovacion(e.target.value);
+      setMensajePago("");
+    }}
+    required
+  >
+    {Object.entries(NOMBRES_PLANES).map(([id, nombre]) => (
+      <option key={id} value={id}>
+        {nombre} — {formatearPrecio(PRECIOS_PLANES[id])}
+      </option>
+    ))}
+  </select>
 
-                <select
-                  id="formaPagoRenovacion"
-                  value={formaPago}
-                  onChange={(e) =>
-                    setFormaPago(
-                      e.target.value
-                    )
-                  }
-                  required
-                >
-                  <option value="Efectivo">
-                    Efectivo
-                  </option>
+  <label>Actividades adicionales</label>
 
-                  <option value="Transferencia">
-                    Transferencia
-                  </option>
-                </select>
+  <div className="actividades-renovacion">
+    {Object.entries(NOMBRES_ACTIVIDADES).map(([id, nombre]) => (
+      <label key={id} className="actividad-renovacion">
+        <input
+          type="checkbox"
+          checked={actividadesRenovacion.includes(id)}
+          onChange={() => {
+            cambiarActividadRenovacion(id);
+            setMensajePago("");
+          }}
+        />
 
-                <p className="aviso-detalle">
-                  Fecha del pago:{" "}
-                  {formatearFecha(
-                    obtenerFechaActual()
-                  )}
-                </p>
+        <span>
+          {nombre}
+          <small>
+            {formatearPrecio(PRECIOS_ACTIVIDADES[id])}/mes
+          </small>
+        </span>
+      </label>
+    ))}
+  </div>
 
-                {mensajePago && (
-                  <p role="alert">
-                    {mensajePago}
-                  </p>
-                )}
+  <div className="total-renovacion">
+    <span>Nuevo total mensual</span>
+    <strong>
+      {formatearPrecio(calcularTotalRenovacion())}
+    </strong>
+  </div>
 
-                <button
-                  type="submit"
-                  className="boton boton-primario"
-                >
-                  Confirmar pago y renovar cuota
-                </button>
+  <label htmlFor="formaPagoRenovacion">
+    Forma de pago
+  </label>
 
-                <button
-                  type="button"
-                  className="boton aviso-boton"
-                  onClick={() =>
-                    setMostrarPago(false)
-                  }
-                >
-                  Cancelar
-                </button>
-              </form>
-            </section>
-          </div>
-        )}
+  <select
+    id="formaPagoRenovacion"
+    value={formaPago}
+    onChange={(e) => setFormaPago(e.target.value)}
+    required
+  >
+    <option value="Efectivo">Efectivo</option>
+    <option value="Transferencia">Transferencia</option>
+  </select>
+
+  <p className="aviso-detalle">
+    Fecha del pago: {formatearFecha(obtenerFechaActual())}
+  </p>
+
+  {mensajePago && (
+    <p role="alert">{mensajePago}</p>
+  )}
+
+  <button
+    type="submit"
+    className="boton boton-primario"
+  >
+    Confirmar renovación
+  </button>
+
+  <button
+    type="button"
+    className="boton aviso-boton"
+    onClick={() => setMostrarPago(false)}
+  >
+    Cancelar
+  </button>
+</form>
+          </section>
+        </div>
+      )}
     </main>
   );
 }
