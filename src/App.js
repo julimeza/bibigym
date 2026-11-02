@@ -1,9 +1,10 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import "./App.css";
 import logo from "./assets/logo-bibigym.png";
 import RegistrarSocia from "./registrarSocia";
+
 const faceapi = window.faceapi;
+
 let modelosFacialesPromise = null;
 
 // =====================================

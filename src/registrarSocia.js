@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./registrarSocia.css";
 import qrMercadoPago from "./assets/qr-mercadopago.png";
-import * as faceapi from "face-api.js";
+const faceapi = window.faceapi;
 
 // =====================================
 // CONFIGURACIÓN
