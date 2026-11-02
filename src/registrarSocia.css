@@ -1,0 +1,1214 @@
+
+/* =========================================
+   BIBIGYM - REGISTRO DE SOCIAS
+   RESPONSIVE: PC, TABLET Y CELULAR
+========================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+.registro-fondo {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 35px 20px;
+  background: #faf6fa;
+  color: #765d72;
+  font-family: inherit;
+  overflow-x: hidden;
+}
+
+.registro-contenedor {
+  width: 100%;
+  max-width: 1050px;
+  margin: 0 auto;
+  padding: 30px;
+  background: #fff;
+  border: 1px solid #f0e4ef;
+  border-radius: 22px;
+  box-shadow: 0 8px 30px rgba(155, 105, 145, 0.09);
+}
+
+/* =========================================
+   ENCABEZADO
+========================================= */
+
+.registro-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 25px;
+  border-bottom: 1px solid #f0e5ef;
+}
+
+.registro-marca h1 {
+  margin: 0;
+  color: #df5795;
+  font-size: 29px;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+
+.registro-marca p {
+  margin: 4px 0 0;
+  color: #a18ba0;
+  font-size: 13px;
+}
+
+.registro-volver {
+  min-height: 44px;
+  padding: 11px 17px;
+  border: 1px solid #ead5e8;
+  border-radius: 10px;
+  background: #fcf7fc;
+  color: #a34d88;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+/* =========================================
+   PESTAÑAS
+========================================= */
+
+.registro-pestanas {
+  display: flex;
+  gap: 10px;
+  margin: 25px 0;
+  padding: 6px;
+  background: #f8f0f7;
+  border-radius: 12px;
+}
+
+.registro-pestanas button {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 12px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: #947b91;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.registro-pestanas button.activa {
+  background: #fff;
+  color: #d64f91;
+  box-shadow: 0 2px 8px rgba(150, 100, 145, 0.10);
+}
+
+/* =========================================
+   SECCIONES
+========================================= */
+
+.registro-seccion {
+  width: 100%;
+  min-width: 0;
+  margin-bottom: 25px;
+  padding: 25px;
+  border: 1px solid #f0e5ef;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.registro-titulo-seccion {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.registro-titulo-seccion > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  background: #f8e8f3;
+  color: #d65394;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.registro-titulo-seccion h2 {
+  margin: 0;
+  color: #8f6287;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+/* =========================================
+   CAMPOS E INPUTS
+========================================= */
+
+.registro-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 22px;
+  width: 100%;
+  max-width: 680px;
+  margin: 18px auto 0;
+}
+
+.registro-campo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 7px;
+  color: #92758d;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.registro-campo input,
+.registro-clase-suelta input {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  padding: 0 11px;
+  border: 1px solid #e9dce8;
+  border-radius: 9px;
+  outline: none;
+  background: #fdfbfd;
+  color: #765d72;
+  font-family: inherit;
+  font-size: 13px;
+  transition: border 0.2s ease, background 0.2s ease;
+}
+
+.registro-campo input:focus,
+.registro-clase-suelta input:focus {
+  border-color: #d77aae;
+  background: #fff;
+}
+
+.registro-campo input::placeholder {
+  color: #b9a9b7;
+}
+
+.registro-fecha {
+  width: 100%;
+  max-width: 270px;
+  margin-bottom: 22px;
+}
+
+/* =========================================
+   CÁMARA Y FOTOGRAFÍA
+========================================= */
+
+.registro-rostro {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  min-width: 0;
+}
+
+.registro-video-contenedor {
+  width: 220px;
+  height: 165px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 2px solid #edd9e9;
+  border-radius: 14px;
+  background: #f8f1f7;
+}
+
+.registro-video-contenedor video,
+.registro-video-contenedor img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.registro-video-contenedor video {
+  transform: scaleX(-1);
+}
+
+.registro-video-contenedor img {
+  transform: none;
+}
+
+.registro-rostro-acciones {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.registro-rostro-acciones p {
+  margin: 0;
+  color: #927b8e;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.registro-boton-secundario {
+  min-height: 44px;
+  padding: 0 20px;
+  border: 1px solid #dca8cd;
+  border-radius: 9px;
+  background: #f9edf6;
+  color: #ae528e;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.registro-boton-secundario:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.registro-enlace {
+  min-height: 30px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #b56a9c;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.registro-error {
+  color: #c65b75 !important;
+}
+
+.registro-facial-exito {
+  color: #548765 !important;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.registro-estado-facial {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.registro-estado-facial p {
+  margin: 0;
+}
+
+/* =========================================
+   PLANES Y CLASES
+========================================= */
+
+.registro-opciones {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.registro-opcion {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 1px solid #eee2ed;
+  border-radius: 10px;
+  background: #fdfafd;
+  cursor: pointer;
+  transition: border 0.2s ease, background 0.2s ease;
+}
+
+.registro-opcion input {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  accent-color: #d65394;
+  cursor: pointer;
+}
+
+.registro-opcion-texto {
+  flex: 1;
+  min-width: 0;
+  color: #826b7f;
+  font-size: 13px;
+}
+
+.registro-opcion strong {
+  color: #c04f91;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.registro-clase {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #f0e5ef;
+  border-radius: 11px;
+}
+
+.registro-dias {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 5px 3px;
+  padding-top: 12px;
+  border-top: 1px solid #f1e6ef;
+}
+
+.registro-dias > span {
+  color: #a16e94;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.registro-dias label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #927b8e;
+  font-size: 12px;
+}
+
+.registro-dias input {
+  accent-color: #d65394;
+}
+
+.registro-ayuda {
+  margin: 0 0 16px;
+  color: #a18da0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* =========================================
+   CLASES SUELTAS
+========================================= */
+
+.registro-clase-suelta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid #f0e5ef;
+  border-radius: 10px;
+  background: #fdfafd;
+}
+
+.registro-clase-suelta > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.registro-clase-suelta strong {
+  color: #866b81;
+  font-size: 14px;
+}
+
+.registro-clase-suelta span {
+  color: #a28c9f;
+  font-size: 12px;
+}
+
+.registro-clase-suelta .registro-opcion {
+  width: 100%;
+}
+
+.registro-cantidad-clase {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 5px 12px 10px;
+}
+
+.registro-cantidad-clase label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: #92758d;
+  font-size: 12px;
+}
+
+.registro-cantidad-clase input {
+  width: 100px;
+}
+
+.registro-cantidad-clase strong {
+  padding-bottom: 12px;
+  color: #c04f91;
+  font-size: 14px;
+}
+
+/* =========================================
+   PAGOS
+========================================= */
+
+.registro-pago-bloque {
+  min-width: 0;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid #eee1ed;
+  border-radius: 12px;
+  background: #fdfafd;
+}
+
+.registro-pago-encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 17px;
+}
+
+.registro-pago-encabezado h3 {
+  margin: 0;
+  color: #8c6c86;
+  font-size: 15px;
+}
+
+.registro-pago-encabezado strong {
+  color: #c44e90;
+  font-size: 17px;
+}
+
+.registro-pago-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+}
+
+/* =========================================
+   QR MERCADO PAGO
+========================================= */
+
+.registro-qr {
+  width: 100%;
+  min-width: 0;
+  margin-top: 24px;
+  padding: 24px;
+  border: 1px solid #ead8e9;
+  border-radius: 16px;
+  background: #fcf8fc;
+}
+
+.registro-qr-contenido {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.registro-qr h3 {
+  margin: 0;
+  color: #b34c86;
+  font-size: 19px;
+}
+
+.registro-qr p {
+  margin: 0;
+  color: #806b7d;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.registro-qr-imagen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 220px;
+  max-width: 100%;
+  height: 220px;
+  border: 2px dashed #d7a8cc;
+  border-radius: 14px;
+  background: #fff;
+  color: #b34c86;
+  overflow: hidden;
+}
+
+.registro-qr-imagen span {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.registro-qr-imagen small {
+  color: #a18b9d;
+  font-size: 12px;
+}
+
+.registro-qr-imagen img {
+  width: 100%;
+  height: 100%;
+  padding: 10px;
+  object-fit: contain;
+}
+
+.registro-imagen-qr {
+  display: block;
+  width: 220px;
+  max-width: 100%;
+  height: auto;
+  margin: 20px auto;
+  padding: 10px;
+  border-radius: 12px;
+  background: #fff;
+  object-fit: contain;
+}
+
+.registro-qr-nota {
+  color: #998397 !important;
+  font-size: 12px !important;
+}
+
+/* =========================================
+   RESUMEN Y SALDOS
+========================================= */
+
+.registro-total {
+  margin-top: 22px;
+  padding: 20px;
+  border: 1px solid #ead9e9;
+  border-radius: 13px;
+  background: #fbf6fb;
+}
+
+.registro-total h3 {
+  margin: 0 0 16px;
+  color: #966b8f;
+  font-size: 17px;
+}
+
+.registro-total > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee3ed;
+  color: #927c8e;
+  font-size: 13px;
+}
+
+.registro-total > div:last-child {
+  border-bottom: none;
+}
+
+.registro-total strong {
+  color: #a34e88;
+  font-size: 14px;
+  text-align: right;
+}
+
+.registro-total .registro-saldo {
+  margin-top: 7px;
+  padding-top: 14px;
+  border-top: 1px solid #e8d5e6;
+  color: #b34c86;
+  font-weight: 700;
+}
+
+.registro-total .registro-saldo strong {
+  color: #c34483;
+  font-size: 17px;
+}
+
+/* =========================================
+   RESUMEN DE PAGOS
+========================================= */
+
+.registro-resumen-pagos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 20px;
+}
+
+.registro-resumen-cuadro {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.registro-estado-pago {
+  margin-top: 15px;
+  padding-top: 12px;
+  border-top: 1px solid #eadce8;
+  color: #b34d85;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* =========================================
+   BOTÓN GUARDAR
+========================================= */
+
+.registro-boton-guardar {
+  width: 100%;
+  min-height: 49px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #df5795, #b78acb);
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.registro-boton-guardar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* =========================================
+   BÚSQUEDA DE SOCIAS
+========================================= */
+
+.registro-busqueda {
+  display: flex;
+  align-items: flex-end;
+  gap: 15px;
+  min-width: 0;
+}
+
+.registro-busqueda .registro-campo {
+  flex: 1;
+}
+
+.registro-busqueda .registro-boton-secundario {
+  min-width: 140px;
+}
+
+/* =========================================
+   FICHA DE SOCIA
+========================================= */
+
+.registro-ficha-socia {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-width: 0;
+  margin: 25px 0;
+  padding: 20px;
+  border: 1px solid #ead9e9;
+  border-radius: 13px;
+  background: #fcf7fb;
+}
+
+.registro-ficha-socia > div {
+  min-width: 0;
+}
+
+.registro-ficha-socia span {
+  color: #b27a9f;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.registro-ficha-socia h3 {
+  margin: 8px 0;
+  color: #95658c;
+  font-size: 20px;
+  overflow-wrap: anywhere;
+}
+
+.registro-ficha-socia p {
+  margin: 0;
+  color: #a18c9e;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.registro-ficha-socia img {
+  width: 75px;
+  height: 75px;
+  flex-shrink: 0;
+  border: 2px solid #e8cfe2;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+/* =========================================
+   HISTORIAL DE PAGOS
+========================================= */
+
+.registro-historial {
+  min-width: 0;
+  margin-top: 30px;
+}
+
+.registro-movimiento {
+  min-width: 0;
+  margin-bottom: 12px;
+  padding: 16px;
+  border: 1px solid #eee2ed;
+  border-radius: 11px;
+  background: #fdfafd;
+}
+
+.registro-movimiento-cabecera {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  padding-bottom: 10px;
+  color: #a34e88;
+  font-size: 14px;
+}
+
+.registro-movimiento-detalle {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 0;
+  border-top: 1px solid #f0e6ef;
+  color: #927b8d;
+  font-size: 12px;
+}
+
+/* =========================================
+   FILTRO DE FECHA DEL HISTORIAL
+========================================= */
+
+.registro-historial .registro-filtro-fecha {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 18px 0 22px;
+  padding: 16px;
+  border: 1px solid #efdce9;
+  border-radius: 10px;
+  background: #fff9fc;
+}
+
+.registro-historial .registro-filtro-fecha .registro-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  color: #925477;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.registro-historial .registro-filtro-fecha input[type="date"] {
+  width: 220px;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid #e8cbdc;
+  border-radius: 7px;
+  outline: none;
+  background: #fff;
+  color: #75445f;
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.registro-historial .registro-filtro-fecha input[type="date"]:focus {
+  border-color: #c77ba5;
+}
+
+.registro-historial .registro-filtro-fecha .registro-boton-secundario {
+  min-height: 42px;
+  margin: 0;
+  padding: 0 16px;
+  border-radius: 7px;
+}
+
+/* =========================================
+   MENSAJES
+========================================= */
+
+.registro-mensaje {
+  margin: 20px 0 0;
+  padding: 13px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.registro-mensaje.exito {
+  border: 1px solid #cce7d5;
+  background: #f0faf3;
+  color: #548765;
+}
+
+.registro-mensaje.error {
+  border: 1px solid #f0d3dc;
+  background: #fff5f7;
+  color: #bd6680;
+}
+
+/* =========================================
+   FOCUS Y HOVER
+========================================= */
+
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid #d77aae;
+  outline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .registro-volver:hover {
+    background: #f5e8f3;
+  }
+
+  .registro-boton-secundario:hover:not(:disabled) {
+    background: #f2deed;
+  }
+
+  .registro-opcion:hover {
+    border-color: #dca8cd;
+    background: #fcf5fb;
+  }
+
+  .registro-boton-guardar:hover:not(:disabled) {
+    opacity: 0.94;
+  }
+}
+
+/* =========================================
+   TABLETS
+========================================= */
+
+@media (max-width: 900px) {
+  .registro-fondo {
+    padding: 25px 15px;
+  }
+
+  .registro-contenedor {
+    padding: 24px 20px;
+  }
+
+  .registro-seccion {
+    padding: 21px 18px;
+  }
+
+  .registro-grid {
+    gap: 14px;
+  }
+
+  .registro-rostro {
+    gap: 18px;
+  }
+}
+
+/* =========================================
+   CELULARES
+========================================= */
+
+@media (max-width: 650px) {
+  .registro-fondo {
+    padding: 12px 9px;
+  }
+
+  .registro-contenedor {
+    padding: 18px 12px;
+    border-radius: 16px;
+  }
+
+  .registro-cabecera {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 15px;
+    padding-bottom: 18px;
+  }
+
+  .registro-marca h1 {
+    font-size: 26px;
+  }
+
+  .registro-volver {
+    width: 100%;
+  }
+
+  .registro-pestanas {
+    gap: 5px;
+    margin: 18px 0;
+    padding: 5px;
+  }
+
+  .registro-pestanas button {
+    padding: 10px 5px;
+    font-size: 12px;
+  }
+
+  .registro-seccion {
+    margin-bottom: 17px;
+    padding: 17px 12px;
+    border-radius: 13px;
+  }
+
+  .registro-titulo-seccion {
+    gap: 9px;
+    margin-bottom: 17px;
+  }
+
+  .registro-titulo-seccion h2 {
+    font-size: 16px;
+  }
+
+  .registro-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 10px;
+    margin: 14px 0 0;
+  }
+
+  .registro-campo {
+    font-size: 11px;
+    gap: 6px;
+  }
+
+  .registro-campo input {
+    min-height: 39px;
+    padding: 0 8px;
+    font-size: 12px;
+  }
+
+  .registro-rostro {
+    align-items: center;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .registro-video-contenedor {
+    width: 100%;
+    max-width: 320px;
+    height: auto;
+    aspect-ratio: 4 / 3;
+  }
+
+  .registro-rostro-acciones {
+    align-items: center;
+    width: 100%;
+    text-align: center;
+  }
+
+  .registro-boton-secundario {
+    max-width: 100%;
+  }
+
+  .registro-pago-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .registro-pago-encabezado {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .registro-busqueda {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .registro-busqueda .registro-boton-secundario {
+    width: 100%;
+  }
+
+  .registro-ficha-socia {
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .registro-ficha-socia h3 {
+    font-size: 16px;
+  }
+
+  .registro-ficha-socia img {
+    width: 62px;
+    height: 62px;
+  }
+
+  .registro-total {
+    padding: 15px;
+  }
+
+  .registro-total > div {
+    gap: 8px;
+    font-size: 12px;
+  }
+
+  .registro-total strong {
+    font-size: 13px;
+  }
+
+  .registro-resumen-pagos {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .registro-historial .registro-filtro-fecha {
+    align-items: stretch;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .registro-historial .registro-filtro-fecha input[type="date"] {
+    width: 100%;
+  }
+
+  .registro-historial .registro-filtro-fecha .registro-boton-secundario {
+    width: 100%;
+  }
+
+  .registro-movimiento-cabecera {
+    flex-wrap: wrap;
+  }
+
+  .registro-qr {
+    padding: 18px 12px;
+  }
+
+  .registro-qr h3 {
+    font-size: 17px;
+  }
+
+  .registro-cantidad-clase {
+    gap: 10px;
+    padding-right: 5px;
+    padding-left: 5px;
+  }
+}
+
+/* =========================================
+   CELULARES PEQUEÑOS
+========================================= */
+
+@media (max-width: 380px) {
+  .registro-fondo {
+    padding: 8px 6px;
+  }
+
+  .registro-contenedor {
+    padding: 14px 9px;
+  }
+
+  .registro-seccion {
+    padding: 14px 9px;
+  }
+
+  .registro-marca h1 {
+    font-size: 24px;
+  }
+
+  .registro-titulo-seccion h2 {
+    font-size: 14px;
+  }
+
+  .registro-grid {
+    gap: 11px 7px;
+  }
+
+  .registro-campo {
+    font-size: 10px;
+  }
+
+  .registro-campo input {
+    padding: 0 6px;
+    font-size: 11px;
+  }
+
+  .registro-dias {
+    gap: 9px;
+    margin-right: 2px;
+    margin-left: 2px;
+  }
+
+  .registro-opcion {
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .registro-opcion-texto {
+    font-size: 12px;
+  }
+
+  .registro-opcion strong {
+    font-size: 12px;
+  }
+
+  .registro-total > div {
+    font-size: 11px;
+  }
+
+  .registro-total strong {
+    font-size: 12px;
+  }
+
+  .registro-pago-bloque {
+    padding: 13px 10px;
+  }
+
+  .registro-ficha-socia {
+    padding: 11px;
+  }
+
+  .registro-ficha-socia img {
+    width: 54px;
+    height: 54px;
+  }
+}
+
+/* =========================================
+   CELULARES EN HORIZONTAL
+========================================= */
+
+@media (max-height: 600px) and (orientation: landscape) {
+  .registro-fondo {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .registro-contenedor {
+    padding-top: 15px;
+    padding-bottom: 15px;
+  }
+
+  .registro-video-contenedor {
+    max-width: 230px;
+    aspect-ratio: 4 / 3;
+    height: auto;
+  }
+}
+
+/* =========================================
+   REDUCIR ANIMACIONES
+========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .registro-volver,
+  .registro-pestanas button,
+  .registro-boton-secundario,
+  .registro-opcion,
+  .registro-boton-guardar {
+    transition: none;
+  }
+}

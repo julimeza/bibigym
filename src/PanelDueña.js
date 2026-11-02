@@ -625,14 +625,9 @@ export default function PanelDueña({ onVolver }) {
               )}
             </div>
           </div>
-
-          <p className="pd-footnote">
-            La recaudación refleja los pagos guardados en el historial de cada
-            socio. Los pagos que no tengan fecha o forma de pago pueden quedar
-            fuera de algunos filtros o de los subtotales por medio de pago.
-          </p>
         </section>
       )}
+
 
       {socioSeleccionado && (
         <div

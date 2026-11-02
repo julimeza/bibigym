@@ -570,3 +570,119 @@
     font-size: 22px;
   }
 }
+
+/* ===== BIBIGYM: ESTILO ROSA Y LILA ===== */
+
+.pd-app,
+.pd-login {
+  background: #fff5fa;
+  color: #39283b;
+  font-family: Arial, sans-serif;
+}
+
+.pd-login {
+  background: linear-gradient(135deg, #fff0f7 0%, #f4eaff 100%);
+}
+
+.pd-login-card {
+  border: 1px solid #f4cce1;
+  border-radius: 22px;
+  box-shadow: 0 14px 40px rgba(190, 100, 155, 0.14);
+}
+
+.pd-logo {
+  background: linear-gradient(135deg, #ec75b4, #a879df);
+  border-radius: 16px;
+  box-shadow: 0 6px 16px rgba(202, 105, 170, 0.2);
+}
+
+.pd-eyebrow {
+  color: #c65391;
+}
+
+.pd-btn-primary {
+  background: linear-gradient(135deg, #e66aaa, #c16fcb);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(208, 104, 168, 0.18);
+}
+
+.pd-btn-secondary {
+  background: #f9e5f1;
+  color: #8f437a;
+}
+
+.pd-nav {
+  border-bottom-color: #f0d5e6;
+}
+
+.pd-nav-btn {
+  color: #8b7185;
+}
+
+.pd-nav-btn.active {
+  color: #c65391;
+  border-bottom-color: #df6cab;
+}
+
+.pd-stat-card,
+.pd-panel,
+.pd-empty-card {
+  border-color: #f2dce9;
+  box-shadow: 0 5px 20px rgba(157, 91, 132, 0.06);
+}
+
+.pd-stat-green {
+  border-top-color: #79c9a5;
+}
+
+.pd-stat-yellow {
+  border-top-color: #edc56e;
+}
+
+.pd-stat-red {
+  border-top-color: #e58ca1;
+}
+
+.pd-income-item,
+.pd-details-grid > div {
+  background: #fff5fa;
+}
+
+.pd-revenue {
+  color: #c65391;
+}
+
+.pd-filters input:focus,
+.pd-filters select:focus,
+.pd-login-card input:focus {
+  border-color: #df79b4;
+  box-shadow: 0 0 0 3px rgba(223, 121, 180, 0.15);
+}
+
+.pd-link-btn {
+  color: #c65391;
+}
+
+.pd-table th {
+  background: #fff4fa;
+}
+
+.pd-table tbody tr:hover {
+  background: #fff7fb;
+}
+
+.pd-tags span {
+  background: #f8e5f5;
+  color: #9855a3;
+}
+
+.pd-close {
+  background: #fae8f3;
+  color: #9c4d83;
+}
+
+@media (max-width: 600px) {
+  .pd-login-card {
+    padding: 26px 22px;
+  }
+}

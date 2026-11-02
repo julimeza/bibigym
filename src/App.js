@@ -1,1167 +1,827 @@
-import { useState } from "react";
+
+import React, { useEffect, useRef, useState } from "react";
 import "./App.css";
-import logoBibi from "./assets/logo-bibigym.png";
-import RegistroSocio from "./RegistroSocio";
-import PanelDueña from "./PanelDueña";
+import logo from "./assets/logo-bibigym.png";
+import RegistrarSocia from "./registrarSocia";
+import * as faceapi from "face-api.js";
+let modelosFacialesPromise = null;
 
-const CLAVE_SOCIOS = "bibigym_socios";
-const CLAVE_PRECIO = "bibigym_precio_mensual";
+// =====================================
+// FUNCIONES PARA FECHAS Y CUOTAS
+// =====================================
 
+function convertirFecha(fecha) {
+  if (!fecha) return null;
 
-const PRECIOS_PLANES = {
-  pesas_personalizadas: 27000,
-  pesas_personalizadas_3_dias: 21000,
-  pesas_sin_personalizado_3_dias: 15000,
-  pase_libre: 35000,
-};
+  const [anio, mes, dia] = fecha.split("-").map(Number);
 
-const NOMBRES_PLANES = {
-  pesas_personalizadas: "Pesas personalizadas — Mensual",
-  pesas_personalizadas_3_dias: "Pesas personalizadas — 3 días",
-  pesas_sin_personalizado_3_dias:
-    "Pesas sin personalización — 3 días",
-  pase_libre: "Pase Libre",
-};
+  if (!anio || !mes || !dia) return null;
 
-const PRECIOS_ACTIVIDADES = {
-  spinning: 27000,
-  trampolin: 25000,
-  aerobics: 15000,
-  box: 15000,
-  barra_funcional: 15000,
-  crossfit: 15000,
-};
+  return new Date(anio, mes - 1, dia);
+}
 
-const NOMBRES_ACTIVIDADES = {
-  spinning: "Spinning",
-  trampolin: "Trampolín",
-  aerobics: "Aerobics",
-  box: "Box",
-  barra_funcional: "Barra funcional",
-  crossfit: "CrossFit",
-};
+function sumarMesCalendario(fecha) {
+  const resultado = new Date(fecha);
+  const diaOriginal = resultado.getDate();
 
-const PRECIOS_CLASES_SUELTAS = {
-  trampolin_suelto: 3000,
-  pesas_suelta: 3000,
-  aerobics_suelto: 2500,
-  spinning_suelto: 4000,
-};
-
-const NOMBRES_CLASES_SUELTAS = {
-  trampolin_suelto: "Trampolín (clase suelta)",
-  pesas_suelta: "Pesas (clase suelta)",
-  aerobics_suelto: "Aerobics (clase suelta)",
-  spinning_suelto: "Spinning (clase suelta)",
-};
-
-const normalizarDNI = (valor) =>
-  String(valor || "").replace(/\D/g, "");
-
-
-const obtenerFechaActual = () => {
-  const fecha = new Date();
-
-  const anio = fecha.getFullYear();
-  const mes = String(fecha.getMonth() + 1).padStart(2, "0");
-  const dia = String(fecha.getDate()).padStart(2, "0");
-
-  return `${anio}-${mes}-${dia}`;
-};
-
-const leerPrecioGuardado = () => {
-  try {
-    const precio = Number(localStorage.getItem(CLAVE_PRECIO));
-
-    return Number.isFinite(precio) && precio > 0
-      ? precio
-      : 30000;
-  } catch {
-    return 30000;
-  }
-};
-
-
-const datosIniciales = {
-  nombre: "",
-  apellido: "",
-  dni: "",
-  telefono: "",
-  plan: "pesas_personalizadas",
-  actividades: [],
-  clasesSueltas: [],
-  formaPago: "",
-  fechaAlta: obtenerFechaActual(),
-};
-
-
-const obtenerSocios = () => {
-  try {
-    const socios = JSON.parse(
-      localStorage.getItem(CLAVE_SOCIOS)
-    );
-
-    return Array.isArray(socios) ? socios : [];
-  } catch {
-    return [];
-  }
-};
-
-const guardarSocios = (socios) => {
-  localStorage.setItem(
-    CLAVE_SOCIOS,
-    JSON.stringify(socios)
-  );
-};
-
-const fechaDesdeTexto = (texto) => {
-  const [anio, mes, dia] = texto.split("-").map(Number);
-
-  return new Date(anio, mes - 1, dia, 12);
-};
-
-const fechaATexto = (fecha) => {
-  return `${fecha.getFullYear()}-${String(
-    fecha.getMonth() + 1
-  ).padStart(2, "0")}-${String(
-    fecha.getDate()
-  ).padStart(2, "0")}`;
-};
-
-const sumarUnMes = (fechaTexto) => {
-  const fecha = fechaDesdeTexto(fechaTexto);
-  const diaOriginal = fecha.getDate();
-
-  fecha.setDate(1);
-  fecha.setMonth(fecha.getMonth() + 1);
+  resultado.setDate(1);
+  resultado.setMonth(resultado.getMonth() + 1);
 
   const ultimoDia = new Date(
-    fecha.getFullYear(),
-    fecha.getMonth() + 1,
+    resultado.getFullYear(),
+    resultado.getMonth() + 1,
     0
   ).getDate();
 
-  fecha.setDate(Math.min(diaOriginal, ultimoDia));
+  resultado.setDate(Math.min(diaOriginal, ultimoDia));
 
-  return fechaATexto(fecha);
-};
+  return resultado;
+}
 
-const obtenerVencimiento = (socio) => {
-  if (socio.fechaVencimiento) {
-    return socio.fechaVencimiento;
-  }
+function diferenciaDias(fecha) {
+  const hoy = new Date();
 
-  return sumarUnMes(
-    socio.fechaAlta || obtenerFechaActual()
-  );
-};
-
-const calcularDias = (fechaTexto) => {
-  const hoy = fechaDesdeTexto(
-    obtenerFechaActual()
+  const hoyUTC = Date.UTC(
+    hoy.getFullYear(),
+    hoy.getMonth(),
+    hoy.getDate()
   );
 
-  const objetivo = fechaDesdeTexto(fechaTexto);
-
-  return Math.round(
-    (objetivo - hoy) / 86400000
+  const fechaUTC = Date.UTC(
+    fecha.getFullYear(),
+    fecha.getMonth(),
+    fecha.getDate()
   );
-};
 
-const formatearFecha = (fechaTexto) => {
-  if (!fechaTexto) {
-    return "—";
-  }
+  return Math.round((fechaUTC - hoyUTC) / 86400000);
+}
 
-  return fechaTexto.split("-").reverse().join("/");
-};
+function formatoFecha(fecha) {
+  if (!fecha) return "Sin fecha";
 
-const formatearPrecio = (importe) =>
-  Number(importe || 0).toLocaleString("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
+  return fecha.toLocaleDateString("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
   });
+}
 
-const obtenerEstadoCuota = (socio) => {
-  const fechaVencimiento = obtenerVencimiento(socio);
-  const diasRestantes = calcularDias(
-    fechaVencimiento
+function obtenerInformacionCuota(socia) {
+  const totalMensual = Number(socia.totalMensual || 0);
+
+  const pagosOrdenados = [...(socia.pagos || [])].sort((a, b) =>
+    String(a.fecha || "").localeCompare(String(b.fecha || ""))
   );
 
-  if (diasRestantes < 0) {
-    return {
-      tipo: "vencida",
-      titulo: "Cuota vencida",
-      detalle:
-        diasRestantes === -1
-          ? "La cuota venció ayer."
-          : `La cuota venció hace ${Math.abs(
-              diasRestantes
-            )} días.`,
-      diasRestantes,
-      fechaVencimiento,
-    };
+  const abonadoMensual = pagosOrdenados.reduce((total, pago) => {
+    return total +
+      Number(pago.efectivoMensual || 0) +
+      Number(pago.transferenciaMensual || 0);
+  }, 0);
+
+  const deuda = Math.max(0, totalMensual - abonadoMensual);
+
+  // Buscar cuándo se completó el pago mensual.
+  // Los pagos parciales se acumulan hasta cubrir el total.
+
+  let acumulado = 0;
+  let fechaCompleta = null;
+
+  if (totalMensual > 0) {
+    for (const pago of pagosOrdenados) {
+      const importe =
+        Number(pago.efectivoMensual || 0) +
+        Number(pago.transferenciaMensual || 0);
+
+      acumulado += importe;
+
+      if (acumulado >= totalMensual) {
+        fechaCompleta = convertirFecha(pago.fecha);
+        acumulado = 0;
+      }
+    }
   }
 
-  if (diasRestantes === 0) {
-    return {
-      tipo: "hoy",
-      titulo: "¡Tu cuota vence hoy!",
-      detalle:
-        "Registrá el pago para renovar la cuota.",
-      diasRestantes,
-      fechaVencimiento,
-    };
+  // Si existe una fecha de vencimiento guardada, utilizarla.
+  let vencimiento = socia.fechaVencimiento
+    ? convertirFecha(socia.fechaVencimiento)
+    : null;
+
+  if (!vencimiento && fechaCompleta) {
+    vencimiento = sumarMesCalendario(fechaCompleta);
   }
 
-  if (diasRestantes <= 3) {
-    return {
-      tipo: "proximo",
-      titulo: `Tu cuota vence en ${diasRestantes} ${
+  let diasRestantes = null;
+  let estado = "pendiente";
+  let aviso = "Cuota pendiente";
+
+  if (deuda > 0) {
+    estado = "deuda";
+    aviso = "Tiene un saldo pendiente";
+  } else if (vencimiento) {
+    diasRestantes = diferenciaDias(vencimiento);
+
+    if (diasRestantes < 0) {
+      estado = "vencida";
+      aviso = "Cuota vencida";
+    } else if (diasRestantes === 0) {
+      estado = "vencida";
+      aviso = "Cuota vencida";
+    } else if (diasRestantes <= 3) {
+      estado = "por-vencer";
+      aviso = `Faltan ${diasRestantes} ${
         diasRestantes === 1 ? "día" : "días"
-      }`,
-      detalle:
-        "Recordá realizar el pago antes del vencimiento.",
-      diasRestantes,
-      fechaVencimiento,
-    };
+      } para el vencimiento`;
+    } else {
+      estado = "vigente";
+      aviso = "Cuota vigente";
+    }
   }
 
   return {
-    tipo: "aldia",
-    titulo: `${diasRestantes} días restantes`,
-    detalle: "Tu cuota está al día.",
+    totalMensual,
+    abonadoMensual,
+    deuda,
+    fechaCompleta,
+    vencimiento,
     diasRestantes,
-    fechaVencimiento,
+    estado,
+    aviso
   };
-};
-
-function App() {
-  const [pantalla, setPantalla] = useState("inicio");
-
-  const [dni, setDni] = useState("");
-
-  const [socio, setSocio] = useState({
-    ...datosIniciales,
-  });
-
-  const [mensaje, setMensaje] = useState("");
-
-  const [socioEncontrado, setSocioEncontrado] =
-    useState(null);
-
-  const [precioMensual, setPrecioMensual] =
-    useState(leerPrecioGuardado);
-
-  const [nuevoPrecio, setNuevoPrecio] = useState(
-    String(leerPrecioGuardado())
-  );
-
-  const [mostrarConfiguracion, setMostrarConfiguracion] =
-    useState(false);
-
-  const [mostrarPago, setMostrarPago] =
-    useState(false);
-
-
-  const [formaPago, setFormaPago] =
-    useState("Efectivo");
-
-  const [mensajePago, setMensajePago] =
-    useState("");
-
-    const [planRenovacion, setPlanRenovacion] =
-  useState("pesas_personalizadas");
-
-const [actividadesRenovacion, setActividadesRenovacion] =
-  useState([]);
-
-  const [mensajePrecio, setMensajePrecio] =
-    useState("");
-
-  const manejarBuscarSocio = (e) => {
-    e.preventDefault();
-
-    const dniBuscado = dni.trim();
-
-    if (!dniBuscado) {
-      setSocioEncontrado(null);
-      setMensaje("Ingresá el DNI del socio.");
-      return;
-    }
-
-    const encontrado = obtenerSocios().find(
-      (item) =>
-        normalizarDNI(item.dni) === normalizarDNI(dniBuscado)
-    );
-
-    if (!encontrado) {
-      setSocioEncontrado(null);
-
-      setMensaje(
-        "No encontramos un socio con ese DNI. Verificá el número o registrá al socio."
-      );
-
-      return;
-    }
-
-    setSocioEncontrado(encontrado);
-    setMensaje("");
-  };
-
-  const abrirRegistro = () => {
-    setSocio({
-      ...datosIniciales,
-      fechaAlta: obtenerFechaActual(),
-    });
-
-    setMensaje("");
-    setMensajePrecio("");
-    setNuevoPrecio(String(precioMensual));
-    setMostrarConfiguracion(false);
-    setSocioEncontrado(null);
-
-    setPantalla("registro");
-  };
-
-  const manejarCambio = (e) => {
-    const { name, value } = e.target;
-
-    let valorFinal = value;
-
-    if (
-      name === "nombre" ||
-      name === "apellido"
-    ) {
-      valorFinal = value
-        .toLocaleLowerCase("es")
-        .replace(
-          /(^|[\s'-])(\p{L})/gu,
-          (
-            coincidencia,
-            separador,
-            letra
-          ) =>
-            separador +
-            letra.toLocaleUpperCase("es")
-        );
-    }
-
-    setSocio((anterior) => ({
-      ...anterior,
-      [name]: valorFinal,
-    }));
-  };
-
-  const guardarSocio = (e) => {
-    e.preventDefault();
-
-    const dniNuevo = String(
-      socio.dni
-    ).trim();
-
-    if (!dniNuevo) {
-      setMensaje("Ingresá el DNI del socio.");
-      return;
-    }
-
-    if (!socio.formaPago) {
-      setMensaje(
-        "Seleccioná una forma de pago."
-      );
-      return;
-    }
-
-    const socios = obtenerSocios();
-
-
-if (
-  socios.some(
-    (item) =>
-      normalizarDNI(item.dni) === normalizarDNI(dniNuevo)
-  )
-) {
-  setMensaje(
-    "Ya existe un socio registrado con ese DNI. Verificá los datos."
-  );
-
-  return;
 }
 
+// =====================================
+// COMPONENTE PRINCIPAL
+// =====================================
 
+function App() {
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+  const sociasFacialesRef = useRef([]);
 
-const fechaPago =
-  socio.fechaAlta || obtenerFechaActual();
+  const [estadoCamara, setEstadoCamara] = useState("apagada");
+  const [mensaje, setMensaje] = useState("La cámara está apagada.");
+  const [camaraSolicitada, setCamaraSolicitada] = useState(false);
+  const [pantalla, setPantalla] = useState("acceso");
+  const [reintentar, setReintentar] = useState(0);
 
-const planId = PRECIOS_PLANES[socio.plan]
-  ? socio.plan
-  : "pesas_personalizadas";
+  const [modelosCargados, setModelosCargados] = useState(false);
+  const [rostroDetectado, setRostroDetectado] = useState(false);
+  const [errorModelos, setErrorModelos] = useState(false);
 
-const actividadesElegidas = Array.isArray(socio.actividades)
-  ? [...new Set(socio.actividades)].filter(
-      (id) => Object.prototype.hasOwnProperty.call(
-        PRECIOS_ACTIVIDADES,
-        id
-      )
-    )
-  : [];
+const [sociaReconocida, setSociaReconocida] = useState(null);
 
-const precioPlan = PRECIOS_PLANES[planId];
+const sociaReconocidaRef = useRef(null);
+const sociaCerradaIdRef = useRef(null);
 
-const detalleActividades = actividadesElegidas.map((id) => ({
-  id,
-  nombre: NOMBRES_ACTIVIDADES[id],
-  precioMensual: PRECIOS_ACTIVIDADES[id],
-}));
+  // =====================================
+  // CARGAR MODELOS FACIALES
+  // =====================================
 
-const totalActividades = detalleActividades.reduce(
-  (total, actividad) => total + actividad.precioMensual,
-  0
-);
+useEffect(() => {
+  let cancelado = false;
 
-const totalMensual = precioPlan + totalActividades;
-
-const clasesSueltasElegidas = Array.isArray(socio.clasesSueltas)
-  ? [...new Set(socio.clasesSueltas)].filter(
-      (id) =>
-        Object.prototype.hasOwnProperty.call(
-          PRECIOS_CLASES_SUELTAS,
-          id
-        )
-    )
-  : [];
-
-const pagosIniciales = [
-  {
-    fecha: fechaPago,
-    importe: totalMensual,
-    formaPago: socio.formaPago,
-    concepto: "Inscripción / primera cuota",
-  },
-  ...clasesSueltasElegidas.map((id) => ({
-    fecha: fechaPago,
-    importe: PRECIOS_CLASES_SUELTAS[id],
-    formaPago: socio.formaPago,
-    concepto: `Clase suelta: ${NOMBRES_CLASES_SUELTAS[id]}`,
-  })),
-];
-
-const nuevoSocio = {
-  ...socio,
-
-  dni: dniNuevo,
-
-  plan: planId,
-  nombrePlan: NOMBRES_PLANES[planId],
-  precioPlan,
-  actividades: actividadesElegidas,
-  detalleActividades,
-  totalMensual,
-
-  clasesSueltas: [],
-
-  fechaAlta: fechaPago,
-  fechaVencimiento: sumarUnMes(fechaPago),
-
-  pagos: pagosIniciales,
-};
-
-
+  async function cargarModelos() {
     try {
-      guardarSocios([
-        ...socios,
-        nuevoSocio,
-      ]);
-    } catch {
-      setMensaje(
-        "No se pudo guardar el socio en este navegador."
-      );
+      // Evita iniciar dos cargas simultáneas de los mismos modelos.
+      if (!modelosFacialesPromise) {
+        modelosFacialesPromise = Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
+          faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
+          faceapi.nets.faceRecognitionNet.loadFromUri("/models")
+        ]);
+      }
 
-      return;
+      await modelosFacialesPromise;
+
+      // Comprobar que los tres modelos estén realmente cargados.
+      const listos =
+        faceapi.nets.tinyFaceDetector.isLoaded &&
+        faceapi.nets.faceLandmark68Net.isLoaded &&
+        faceapi.nets.faceRecognitionNet.isLoaded;
+
+      if (!listos) {
+        throw new Error("Uno o más modelos faciales no están disponibles.");
+      }
+
+      if (!cancelado) {
+        setModelosCargados(true);
+        setErrorModelos(false);
+        console.log("Modelos faciales cargados correctamente.");
+      }
+
+    } catch (error) {
+      console.error("Error cargando modelos faciales:", error);
+
+      modelosFacialesPromise = null;
+
+      if (!cancelado) {
+        setModelosCargados(false);
+        setErrorModelos(true);
+      }
     }
+  }
 
-    setDni(dniNuevo);
+  cargarModelos();
 
-    setSocioEncontrado(nuevoSocio);
-
-    setMensaje(
-      "Socio registrado correctamente."
-    );
-
-    setPantalla("inicio");
+  return () => {
+    cancelado = true;
   };
+}, []);
 
-  const guardarNuevoPrecio = () => {
-    const precio = Number(nuevoPrecio);
+// =====================================
+// ACTUALIZAR LISTA DE SOCIAS
+// =====================================
 
-    if (
-      !Number.isFinite(precio) ||
-      precio <= 0
-    ) {
-      setMensajePrecio(
-        "Ingresá un precio mayor que cero."
-      );
-
-      return;
-    }
-
+useEffect(() => {
+  function actualizarSocias() {
     try {
-      localStorage.setItem(
-        CLAVE_PRECIO,
-        String(precio)
+      const guardadas = JSON.parse(
+        localStorage.getItem("bibigym_socias") || "[]"
       );
 
-      setPrecioMensual(precio);
-
-      setNuevoPrecio(String(precio));
-
-      setMensajePrecio(
-        "Precio mensual actualizado correctamente."
-      );
-
-      setMostrarConfiguracion(false);
-    } catch {
-      setMensajePrecio(
-        "No se pudo guardar el precio en este navegador."
-      );
-    }
-  };
-
-
-
-const abrirPago = () => {
-  if (!socioEncontrado) return;
-
-  const planActual = PRECIOS_PLANES[socioEncontrado.plan]
-    ? socioEncontrado.plan
-    : "pesas_personalizadas";
-
-  const actividadesActuales = Array.isArray(
-    socioEncontrado.actividades
-  )
-    ? socioEncontrado.actividades.filter((id) =>
-        Object.prototype.hasOwnProperty.call(
-          PRECIOS_ACTIVIDADES,
-          id
+      sociasFacialesRef.current = guardadas
+        .filter(socia =>
+          Array.isArray(socia.descriptorFacial) &&
+          socia.descriptorFacial.length === 128
         )
-      )
-    : Array.isArray(socioEncontrado.detalleActividades)
-    ? socioEncontrado.detalleActividades
-        .map((actividad) => actividad.id)
-        .filter((id) =>
-          Object.prototype.hasOwnProperty.call(
-            PRECIOS_ACTIVIDADES,
-            id
+        .map(socia => ({
+          ...socia,
+          descriptorPreparado: new Float32Array(
+            socia.descriptorFacial
           )
+        }));
+
+    } catch (error) {
+      console.error("Error leyendo socias:", error);
+      sociasFacialesRef.current = [];
+    }
+  }
+
+  actualizarSocias();
+
+  const intervalo = setInterval(actualizarSocias, 10000);
+
+  window.addEventListener("focus", actualizarSocias);
+  window.addEventListener("storage", actualizarSocias);
+
+  return () => {
+    clearInterval(intervalo);
+    window.removeEventListener("focus", actualizarSocias);
+    window.removeEventListener("storage", actualizarSocias);
+  };
+}, [pantalla]);
+
+// =====================================
+// RECONOCIMIENTO FACIAL CONTINUO
+// =====================================
+
+useEffect(() => {
+  if (estadoCamara !== "activa") return;
+  if (!modelosCargados) return;
+
+  let cancelado = false;
+  let temporizador = null;
+  let procesando = false;
+  let ultimoEstadoRostro = false;
+
+  async function detectarEIdentificar() {
+    if (cancelado || procesando) return;
+
+    if (sociaReconocidaRef.current) {
+      temporizador = setTimeout(detectarEIdentificar, 500);
+      return;
+    }
+
+    const modelosListos =
+      faceapi.nets.tinyFaceDetector.isLoaded &&
+      faceapi.nets.faceLandmark68Net.isLoaded &&
+      faceapi.nets.faceRecognitionNet.isLoaded;
+
+    if (!modelosListos) {
+      temporizador = setTimeout(detectarEIdentificar, 1000);
+      return;
+    }
+
+    const video = videoRef.current;
+
+    if (!video || video.readyState < 2 || !video.videoWidth) {
+      temporizador = setTimeout(detectarEIdentificar, 500);
+      return;
+    }
+
+    procesando = true;
+
+    try {
+      const resultado = await faceapi
+        .detectSingleFace(
+          video,
+          new faceapi.TinyFaceDetectorOptions({
+            inputSize: 128,
+            scoreThreshold: 0.5
+          })
         )
-    : [];
+        .withFaceLandmarks()
+        .withFaceDescriptor();
 
-  setPlanRenovacion(planActual);
-  setActividadesRenovacion(actividadesActuales);
+      if (cancelado) return;
 
-  setFormaPago("Efectivo");
-  setMensajePago("");
-  setMostrarPago(true);
-};
+      const hayRostro = Boolean(resultado);
 
-const calcularTotalRenovacion = () => {
-  const precioPlan = PRECIOS_PLANES[planRenovacion] || 0;
+      // Actualizar React solamente cuando cambia la detección.
+      if (hayRostro !== ultimoEstadoRostro) {
+        ultimoEstadoRostro = hayRostro;
+        setRostroDetectado(hayRostro);
+      }
 
-  const precioActividades = actividadesRenovacion.reduce(
-    (total, id) =>
-      total + (PRECIOS_ACTIVIDADES[id] || 0),
-    0
-  );
+      if (!resultado) {
+        sociaCerradaIdRef.current = null;
 
-  return precioPlan + precioActividades;
-};
+        if (!sociaReconocidaRef.current) {
+          setMensaje(
+            "Esperando que una socia se coloque frente a la cámara."
+          );
+        }
 
-const cambiarActividadRenovacion = (id) => {
-  setActividadesRenovacion((actuales) =>
-    actuales.includes(id)
-      ? actuales.filter((actividad) => actividad !== id)
-      : [...actuales, id]
-  );
-};
+        return;
+      }
 
+      const socias = sociasFacialesRef.current;
 
+      let mejorCoincidencia = null;
+      let menorDistancia = Infinity;
 
+      for (const socia of socias) {
+        const distancia = faceapi.euclideanDistance(
+          resultado.descriptor,
+          socia.descriptorPreparado
+        );
 
-const registrarPago = (e) => {
-  e.preventDefault();
+        if (distancia < menorDistancia) {
+          menorDistancia = distancia;
+          mejorCoincidencia = socia;
+        }
+      }
 
-  if (!socioEncontrado) return;
+      if (mejorCoincidencia && menorDistancia < 0.50) {
+        const idReconocido = mejorCoincidencia.id;
 
-  if (!PRECIOS_PLANES[planRenovacion]) {
-    setMensajePago("Seleccioná un plan mensual válido.");
-    return;
+        if (idReconocido === sociaCerradaIdRef.current) {
+          return;
+        }
+
+        if (!sociaReconocidaRef.current) {
+          sociaReconocidaRef.current = mejorCoincidencia;
+          setSociaReconocida(mejorCoincidencia);
+          setMensaje("Socia identificada correctamente.");
+        }
+
+      } else {
+        setMensaje("Rostro detectado. Socia no identificada.");
+      }
+
+    } catch (error) {
+      console.error("Error en reconocimiento facial:", error);
+
+    } finally {
+      procesando = false;
+
+      if (!cancelado) {
+        // Menos inferencias por segundo para liberar recursos.
+        temporizador = setTimeout(detectarEIdentificar, 1000);
+      }
+    }
   }
 
-  if (!formaPago) {
-    setMensajePago("Seleccioná una forma de pago.");
-    return;
+  detectarEIdentificar();
+
+  return () => {
+    cancelado = true;
+    clearTimeout(temporizador);
+    setRostroDetectado(false);
+  };
+
+}, [estadoCamara, modelosCargados]);
+
+  // =====================================
+  // ACTIVAR Y CONTROLAR CÁMARA
+  // =====================================
+
+  useEffect(() => {
+    let cancelado = false;
+    let stream = null;
+
+    async function iniciarCamara() {
+      if (pantalla !== "acceso") return;
+      if (!camaraSolicitada) return;
+
+      try {
+        setEstadoCamara("cargando");
+        setMensaje("Preparando cámara...");
+
+        if (!navigator.mediaDevices?.getUserMedia) {
+          throw new Error("incompatible");
+        }
+
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: "user",
+            width: { ideal: 640 },
+            height: { ideal: 480 },
+            aspectRatio: { ideal: 4 / 3 }
+          },
+          audio: false
+        });
+
+        if (cancelado) {
+          stream.getTracks().forEach(track => track.stop());
+          return;
+        }
+
+        streamRef.current = stream;
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+        }
+
+        if (!cancelado) {
+          setEstadoCamara("activa");
+          setMensaje(
+            "Cámara activa. Colocá tu rostro frente a la cámara."
+          );
+        }
+      } catch (error) {
+        if (cancelado) return;
+
+        console.error("Error al iniciar la cámara:", error);
+
+        setEstadoCamara("error");
+
+        if (error.message === "incompatible") {
+          setMensaje(
+            "Tu navegador no permite acceder a la cámara. Utilizá una conexión segura."
+          );
+        } else if (
+          error.name === "NotAllowedError" ||
+          error.name === "PermissionDeniedError"
+        ) {
+          setMensaje("Necesitamos permiso para utilizar la cámara.");
+        } else if (error.name === "NotFoundError") {
+          setMensaje("No encontramos una cámara disponible.");
+        } else if (error.name === "NotReadableError") {
+          setMensaje(
+            "La cámara está siendo utilizada por otra aplicación."
+          );
+        } else {
+          setMensaje("No pudimos iniciar la cámara. Intentá nuevamente.");
+        }
+      }
+    }
+
+    iniciarCamara();
+
+    return () => {
+      cancelado = true;
+
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+
+      if (streamRef.current === stream) {
+        streamRef.current = null;
+      }
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+    };
+  }, [reintentar, pantalla, camaraSolicitada]);
+
+  // =====================================
+  // ACCIONES
+  // =====================================
+
+  function reactivarCamara() {
+    setCamaraSolicitada(true);
+    setReintentar(anterior => anterior + 1);
   }
 
-  const importe = calcularTotalRenovacion();
+function cerrarCamara() {
+  streamRef.current?.getTracks().forEach(track => track.stop());
+  streamRef.current = null;
 
-  if (importe <= 0) {
-    setMensajePago("El importe debe ser mayor que cero.");
-    return;
+  if (videoRef.current) {
+    videoRef.current.srcObject = null;
   }
 
-  const socios = obtenerSocios();
+  sociaReconocidaRef.current = null;
+  sociaCerradaIdRef.current = null;
 
-  const indice = socios.findIndex(
-    (item) =>
-      normalizarDNI(item.dni) ===
-      normalizarDNI(socioEncontrado.dni)
-  );
+  setCamaraSolicitada(false);
+  setEstadoCamara("apagada");
+  setMensaje("La cámara está apagada.");
+  setSociaReconocida(null);
+}
 
-  if (indice === -1) {
-    setMensajePago(
-      "No se encontró al socio para actualizar su cuota."
+  function abrirRegistro() {
+    cerrarCamara();
+    setPantalla("registro");
+  }
+
+  function abrirPagos() {
+    cerrarCamara();
+    setPantalla("pagos");
+  }
+
+  function volverAlAcceso() {
+    setPantalla("acceso");
+  }
+
+function cerrarFichaSocia() {
+  if (sociaReconocidaRef.current) {
+    sociaCerradaIdRef.current = sociaReconocidaRef.current.id;
+  }
+
+  sociaReconocidaRef.current = null;
+  setSociaReconocida(null);
+}
+
+function irARegistrarPago() {
+  if (!sociaReconocidaRef.current) return;
+
+  const dni = sociaReconocidaRef.current.dni;
+
+  sociaReconocidaRef.current = null;
+  setSociaReconocida(null);
+
+  cerrarCamara();
+  setPantalla("pagos");
+  setDniParaPago(dni);
+}
+
+  const [dniParaPago, setDniParaPago] = useState("");
+
+  // =====================================
+  // MÓDULO REGISTRAR SOCIA
+  // =====================================
+
+  if (pantalla === "registro" || pantalla === "pagos") {
+    return (
+      <RegistrarSocia
+        onVolver={volverAlAcceso}
+        modoInicial={pantalla === "pagos" ? "pagos" : "registro"}
+        dniInicial={dniParaPago}
+      />
     );
-    return;
   }
 
-  const fechaPago = obtenerFechaActual();
-  const socioActual = socios[indice];
+  // =====================================
+  // DATOS DE LA SOCIA RECONOCIDA
+  // =====================================
 
-  const detalleActividades = actividadesRenovacion.map((id) => ({
-    id,
-    nombre: NOMBRES_ACTIVIDADES[id],
-    precioMensual: PRECIOS_ACTIVIDADES[id],
-  }));
+  const informacionCuota = sociaReconocida
+    ? obtenerInformacionCuota(sociaReconocida)
+    : null;
 
-  const pagoNuevo = {
-    fecha: fechaPago,
-    importe,
-    formaPago,
-    concepto: "Renovación mensual",
-  };
-
-  const socioActualizado = {
-    ...socioActual,
-    plan: planRenovacion,
-    nombrePlan: NOMBRES_PLANES[planRenovacion],
-    precioPlan: PRECIOS_PLANES[planRenovacion],
-    actividades: [...actividadesRenovacion],
-    detalleActividades,
-    totalMensual: importe,
-    fechaVencimiento: sumarUnMes(fechaPago),
-    pagos: [
-      ...(Array.isArray(socioActual.pagos)
-        ? socioActual.pagos
-        : []),
-      pagoNuevo,
-    ],
-  };
-
-  socios[indice] = socioActualizado;
-
-  try {
-    guardarSocios(socios);
-  } catch {
-    setMensajePago(
-      "No se pudieron guardar los cambios en este navegador."
-    );
-    return;
-  }
-
-  setSocioEncontrado(socioActualizado);
-  setMostrarPago(false);
-  setMensaje("Cuota renovada y datos actualizados correctamente.");
-};
-
-
-  const volverInicio = () => {
-    setMensaje("");
-    setMensajePrecio("");
-    setMostrarConfiguracion(false);
-    setPantalla("inicio");
-  };
-
-  const estadoCuota =
-    socioEncontrado
-      ? obtenerEstadoCuota(
-          socioEncontrado
-        )
-      : null;
-
-  const historialPagos =
-    socioEncontrado &&
-    Array.isArray(
-      socioEncontrado.pagos
-    )
-      ? [
-          ...socioEncontrado.pagos,
-        ].reverse()
-      : [];
+  // =====================================
+  // PANTALLA PRINCIPAL
+  // =====================================
 
   return (
-    <main
-      className={`fondo ${
-        pantalla === "registro"
-          ? "fondo-registro"
-          : ""
-      } ${
-        pantalla === "duena"
-          ? "fondo-panel"
-          : ""
-      }`}
-    >
-      {/* BOTÓN FUERA DE LA TARJETA */}
-      {pantalla === "inicio" && (
-        <button
-          type="button"
-          className="boton-menu-duena-exterior"
-          onClick={() =>
-            setPantalla("duena")
-          }
-        >
-          <span className="boton-panel-icono">
-            ⚙
-          </span>
-
-          <span>
-            Panel Completo
-          </span>
-        </button>
-      )}
-
-      <section
-        className={`tarjeta ${
-          pantalla === "registro"
-            ? "tarjeta-registro"
-            : ""
-        } ${
-          pantalla === "duena"
-            ? "tarjeta-panel"
-            : ""
-        }`}
-      >
+    <main className="fondo">
+      <section className="tarjeta">
         <header className="cabecera">
           <div className="logo-marco">
             <img
-              src={logoBibi}
+              src={logo}
               alt="Logo BibiGym"
               className="logo-img"
             />
           </div>
 
           <div className="encabezado-texto">
-            <h1 className="titulo">
-              BibiGym
-            </h1>
-
-            <p className="subtitulo">
-              {pantalla === "inicio"
-                ? "Control de acceso"
-                : pantalla === "duena"
-                ? "Panel Completo"
-                : "Registro de socio"}
-            </p>
+            <h1 className="titulo">BibiGym</h1>
+            <p className="subtitulo">Control de acceso</p>
           </div>
         </header>
 
-        {pantalla === "duena" ? (
-          <PanelDueña
-            onVolver={() =>
-              setPantalla("inicio")
-            }
-          />
-        ) : pantalla === "inicio" ? (
-          <>
-            <form
-              className="bloque"
-              onSubmit={
-                manejarBuscarSocio
-              }
-            >
-              <label
-                htmlFor="dni"
-                className="etiqueta"
-              >
-                DNI del socio
-              </label>
+        <div className="bloque-camara">
+          <div className="camara-contenedor">
+            <video
+              ref={videoRef}
+              className="camara-video"
+              autoPlay
+              muted
+              playsInline
+            />
 
-              <input
-                id="dni"
-                type="text"
-                className="input"
-                value={dni}
-                onChange={(e) => {
-                  setDni(
-                    e.target.value
-                  );
+            {estadoCamara !== "activa" && (
+              <div className="camara-overlay">
+                <div className="camara-icono">
+                  {estadoCamara === "error" ? "!" : "..."}
+                </div>
 
-                  setSocioEncontrado(
-                    null
-                  );
+                <p>
+                  {estadoCamara === "cargando"
+                    ? "Iniciando cámara..."
+                    : "Cámara no disponible"}
+                </p>
+              </div>
+            )}
+          </div>
 
-                  setMensaje("");
-                }}
-                placeholder="Ingresá el DNI"
-                autoComplete="off"
-                inputMode="numeric"
-              />
-
-              <button
-                type="submit"
-                className="boton boton-primario"
-              >
-                <span>
-                  Buscar socio
-                </span>
-
-                <span
-                  className="flecha"
-                  aria-hidden="true"
-                >
-                  →
-                </span>
-              </button>
-            </form>
-
-            {socioEncontrado &&
-              estadoCuota && (
-                <div className="aviso-overlay">
-                  <section
-                    className={`aviso-modal aviso-${estadoCuota.tipo}`}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="titulo-aviso-cuota"
-                  >
-                    <button
-                      type="button"
-                      className="aviso-cerrar"
-                      onClick={() =>
-                        setSocioEncontrado(
-                          null
-                        )
-                      }
-                      aria-label="Cerrar aviso"
-                    >
-                      ×
-                    </button>
-
-                    <div className="aviso-icono">
-                      {estadoCuota.tipo ===
-                      "aldia"
-                        ? "✓"
-                        : "!"}
-                    </div>
-
-                    <p className="aviso-etiqueta">
-                      BIBIGYM · ESTADO DE CUOTA
-                    </p>
-
-                    <h2 id="titulo-aviso-cuota">
-                      {
-                        socioEncontrado.nombre
-                      }{" "}
-                      {
-                        socioEncontrado.apellido
-                      }
-                    </h2>
-
-                    <p className="aviso-dias">
-                      {
-                        estadoCuota.titulo
-                      }
-                    </p>
-
-                    <p className="aviso-detalle">
-                      {
-                        estadoCuota.detalle
-                      }
-                    </p>
-
-                    <div className="aviso-fecha">
-                      Vencimiento:{" "}
-                      {formatearFecha(
-                        estadoCuota.fechaVencimiento
-                      )}
-                    </div>
-
-
-<div className="pago-resumen pago-resumen-socia">
-  <div className="pago-dato">
-    <span className="pago-dato-etiqueta">DNI</span>
-    <strong>{socioEncontrado.dni}</strong>
-  </div>
-
-  <div className="pago-dato">
-    <span className="pago-dato-etiqueta">PLAN CONTRATADO</span>
-    <strong>
-      {socioEncontrado.nombrePlan ||
-        NOMBRES_PLANES[socioEncontrado.plan] ||
-        "Sin información"}
-    </strong>
-  </div>
-
-  <div className="pago-dato pago-dato-actividades">
-    <span className="pago-dato-etiqueta">
-      ACTIVIDADES ADICIONALES
-    </span>
-
-    {Array.isArray(socioEncontrado.detalleActividades) &&
-    socioEncontrado.detalleActividades.length > 0 ? (
-      <div className="pago-lista-actividades">
-        {socioEncontrado.detalleActividades.map((actividad) => (
-          <span
-            className="pago-actividad-etiqueta"
-            key={actividad.id}
+          <div
+            className={`camara-estado ${estadoCamara}`}
+            aria-live="polite"
           >
-            {actividad.nombre}
-          </span>
-        ))}
-      </div>
-    ) : (
-      <span className="pago-sin-actividades">
-        Sin actividades adicionales
-      </span>
-    )}
-  </div>
+            <span className="camara-punto"></span>
+            <p>{mensaje}</p>
+          </div>
 
-  <div className="pago-mensualidad">
-    <span>Mensualidad total</span>
-    <strong>
-      {formatearPrecio(
-        socioEncontrado.totalMensual ??
-          socioEncontrado.precioPlan ??
-          precioMensual
-      )}
-    </strong>
-  </div>
+          <div className="estado-reconocimiento">
+            {errorModelos ? (
+              <p>No se pudieron cargar los modelos faciales.</p>
+            ) : !modelosCargados ? (
+              <p>Cargando sistema de reconocimiento facial...</p>
+            ) : rostroDetectado ? (
+              <p>Rostro detectado correctamente.</p>
+            ) : (
+              <p>Sistema facial preparado. Esperando rostro...</p>
+            )}
+          </div>
 
-  <div className="pago-dato pago-dato-forma">
-    <span className="pago-dato-etiqueta">
-      ÚLTIMA FORMA DE PAGO
-    </span>
-    <strong>
-      {historialPagos[0]?.formaPago || "Sin información"}
-    </strong>
-  </div>
-</div>
+          {estadoCamara !== "activa" && (
+            <button
+              type="button"
+              className="boton boton-primario"
+              onClick={reactivarCamara}
+            >
+              {estadoCamara === "error"
+                ? "Activar cámara nuevamente"
+                : "Abrir cámara"}
+            </button>
+          )}
 
+          {estadoCamara === "activa" && (
+            <button
+              type="button"
+              className="boton boton-primario"
+              onClick={cerrarCamara}
+            >
+              Cerrar cámara
+            </button>
+          )}
+        </div>
 
-                    <button
-                      type="button"
-                      className="boton boton-primario boton-renovar"
-                      onClick={abrirPago}
-                    >
-                      Renovar cuota
-                    </button>
+        <div className="separador">
+          <span></span>
+        </div>
 
-                    <button
-                      type="button"
-                      className="boton aviso-boton"
-                      onClick={() =>
-                        setSocioEncontrado(
-                          null
-                        )
-                      }
-                    >
-                      Cerrar
-                    </button>
-                  </section>
+        <div className="botones-inicio">
+          <button
+            type="button"
+            className="boton boton-secundario"
+            onClick={abrirRegistro}
+          >
+            Registrar socia nueva
+          </button>
+
+          <button
+            type="button"
+            className="boton boton-secundario"
+            onClick={abrirPagos}
+          >
+            Registrar pago
+          </button>
+        </div>
+      </section>
+
+      {/* =====================================
+          FICHA FLOTANTE DE LA SOCIA
+      ===================================== */}
+
+      {sociaReconocida && informacionCuota && (
+        <div className="modal-socia-fondo">
+          <section
+            className="modal-socia"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Información de la socia"
+          >
+            <button
+              type="button"
+              className="modal-socia-cerrar"
+              onClick={cerrarFichaSocia}
+              aria-label="Cerrar información de la socia"
+            >
+              ×
+            </button>
+
+            <div className="modal-socia-encabezado">
+              {sociaReconocida.rostro ? (
+                <img
+                  src={sociaReconocida.rostro}
+                  alt={`Fotografía de ${sociaReconocida.nombre}`}
+                  className="modal-socia-foto"
+                />
+              ) : (
+                <div className="modal-socia-foto modal-socia-sin-foto">
+                  BG
                 </div>
               )}
 
-            <div
-              className="separador"
-              aria-hidden="true"
-            >
-              <span>o</span>
+              <div className="modal-socia-identidad">
+                <span className="modal-socia-etiqueta">
+                  SOCIA IDENTIFICADA
+                </span>
+
+                <h2>
+                  {sociaReconocida.nombre} {sociaReconocida.apellido}
+                </h2>
+
+                <p>DNI: {sociaReconocida.dni}</p>
+
+                <p>
+                  Plan: {sociaReconocida.plan?.nombre || "Sin plan mensual"}
+                </p>
+              </div>
             </div>
 
-            <button
-              type="button"
-              className="boton boton-secundario"
-              onClick={abrirRegistro}
-            >
-              Registrar socio nuevo
-            </button>
-          </>
-        ) : (
-          <RegistroSocio
-            datos={socio}
-            manejarCambio={
-              manejarCambio
-            }
-            guardarSocio={
-              guardarSocio
-            }
-            mensaje={mensaje}
-            volverInicio={
-              volverInicio
-            }
-            precioMensual={
-              precioMensual
-            }
-            nuevoPrecio={
-              nuevoPrecio
-            }
-            setNuevoPrecio={
-              setNuevoPrecio
-            }
-            mostrarConfiguracion={
-              mostrarConfiguracion
-            }
-            setMostrarConfiguracion={
-              setMostrarConfiguracion
-            }
-            guardarNuevoPrecio={
-              guardarNuevoPrecio
-            }
-            mensajePrecio={
-              mensajePrecio
-            }
-            setMensajePrecio={
-              setMensajePrecio
-            }
-          />
-        )}
+            <div className="modal-socia-separador"></div>
 
-        {pantalla === "inicio" &&
-          mensaje && (
-            <p
-              className="mensaje-formulario"
-              role="status"
-            >
-              {mensaje}
-            </p>
-          )}
-      </section>
+            <div className="modal-socia-cuota">
+              <div className="modal-socia-titulo">
+                <h3>Estado de la cuota</h3>
 
-      {mostrarPago &&
-        socioEncontrado && (
-          <div className="aviso-overlay">
-            <section
-              className="aviso-modal modal-pago"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="titulo-modal-pago"
-            >
+                <span className={`estado-cuota ${informacionCuota.estado}`}>
+                  {informacionCuota.aviso}
+                </span>
+              </div>
+
+              <div className="modal-socia-datos">
+                <div>
+                  <span>Inicio de cuota</span>
+                  <strong>
+                    {formatoFecha(informacionCuota.fechaCompleta)}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>Vencimiento</span>
+                  <strong>
+                    {formatoFecha(informacionCuota.vencimiento)}
+                  </strong>
+                </div>
+
+                <div className="modal-socia-dias">
+                  <span>Días restantes</span>
+                  <strong>
+                    {informacionCuota.diasRestantes === null
+                      ? "—"
+                      : Math.max(0, informacionCuota.diasRestantes)}
+                  </strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-socia-pagos">
+              <div>
+                <span>Total mensual</span>
+                <strong>
+                  ${informacionCuota.totalMensual.toLocaleString("es-AR")}
+                </strong>
+              </div>
+
+              <div>
+                <span>Abonado</span>
+                <strong>
+                  ${informacionCuota.abonadoMensual.toLocaleString("es-AR")}
+                </strong>
+              </div>
+
+              <div className="modal-socia-deuda">
+                <span>Deuda pendiente</span>
+                <strong>
+                  ${informacionCuota.deuda.toLocaleString("es-AR")}
+                </strong>
+              </div>
+            </div>
+
+            {informacionCuota.deuda > 0 && (
               <button
                 type="button"
-                className="aviso-cerrar"
-                onClick={() =>
-                  setMostrarPago(false)
-                }
-                aria-label="Cerrar pago"
+                className="modal-socia-boton-pago"
+                onClick={irARegistrarPago}
               >
-                ×
+                Registrar pago
+                <span>→</span>
               </button>
+            )}
 
-              <p className="aviso-etiqueta">
-                BIBIGYM · NUEVO PAGO
-              </p>
-
-              <h2 id="titulo-modal-pago">
-                {
-                  socioEncontrado.nombre
-                }{" "}
-                {
-                  socioEncontrado.apellido
-                }
-              </h2>
-
-
-<form
-  className="formulario-pago"
-  onSubmit={registrarPago}
->
-  <label htmlFor="planRenovacion">
-    Plan mensual
-  </label>
-
-  <select
-    id="planRenovacion"
-    value={planRenovacion}
-    onChange={(e) => {
-      setPlanRenovacion(e.target.value);
-      setMensajePago("");
-    }}
-    required
-  >
-    {Object.entries(NOMBRES_PLANES).map(([id, nombre]) => (
-      <option key={id} value={id}>
-        {nombre} — {formatearPrecio(PRECIOS_PLANES[id])}
-      </option>
-    ))}
-  </select>
-
-  <label>Actividades adicionales</label>
-
-  <div className="actividades-renovacion">
-    {Object.entries(NOMBRES_ACTIVIDADES).map(([id, nombre]) => (
-      <label key={id} className="actividad-renovacion">
-        <input
-          type="checkbox"
-          checked={actividadesRenovacion.includes(id)}
-          onChange={() => {
-            cambiarActividadRenovacion(id);
-            setMensajePago("");
-          }}
-        />
-
-        <span>
-          {nombre}
-          <small>
-            {formatearPrecio(PRECIOS_ACTIVIDADES[id])}/mes
-          </small>
-        </span>
-      </label>
-    ))}
-  </div>
-
-  <div className="total-renovacion">
-    <span>Nuevo total mensual</span>
-    <strong>
-      {formatearPrecio(calcularTotalRenovacion())}
-    </strong>
-  </div>
-
-  <label htmlFor="formaPagoRenovacion">
-    Forma de pago
-  </label>
-
-  <select
-    id="formaPagoRenovacion"
-    value={formaPago}
-    onChange={(e) => setFormaPago(e.target.value)}
-    required
-  >
-    <option value="Efectivo">Efectivo</option>
-    <option value="Transferencia">Transferencia</option>
-  </select>
-
-  <p className="aviso-detalle">
-    Fecha del pago: {formatearFecha(obtenerFechaActual())}
-  </p>
-
-  {mensajePago && (
-    <p role="alert">{mensajePago}</p>
-  )}
-
-  <button
-    type="submit"
-    className="boton boton-primario"
-  >
-    Confirmar renovación
-  </button>
-
-  <button
-    type="button"
-    className="boton aviso-boton"
-    onClick={() => setMostrarPago(false)}
-  >
-    Cancelar
-  </button>
-</form>
+            <p className="modal-socia-pie">
+              Esta ventana permanecerá abierta hasta que la cierres.
+            </p>
           </section>
         </div>
       )}
