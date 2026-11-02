@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import "./App.css";
 import logo from "./assets/logo-bibigym.png";
 import RegistrarSocia from "./registrarSocia";
-import * as faceapi from "face-api.js";
+const faceapi = window.faceapi;
 let modelosFacialesPromise = null;
 
 // =====================================
@@ -407,96 +407,99 @@ useEffect(() => {
   // ACTIVAR Y CONTROLAR CÁMARA
   // =====================================
 
-  useEffect(() => {
-    let cancelado = false;
-    let stream = null;
+useEffect(() => {
+  let cancelado = false;
+  let stream = null;
 
-    async function iniciarCamara() {
-      if (pantalla !== "acceso") return;
-      if (!camaraSolicitada) return;
+  // Guardamos una referencia estable al elemento de video.
+  const videoElement = videoRef.current;
 
-      try {
-        setEstadoCamara("cargando");
-        setMensaje("Preparando cámara...");
+  async function iniciarCamara() {
+    if (pantalla !== "acceso") return;
+    if (!camaraSolicitada) return;
 
-        if (!navigator.mediaDevices?.getUserMedia) {
-          throw new Error("incompatible");
-        }
+    try {
+      setEstadoCamara("cargando");
+      setMensaje("Preparando cámara...");
 
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "user",
-            width: { ideal: 640 },
-            height: { ideal: 480 },
-            aspectRatio: { ideal: 4 / 3 }
-          },
-          audio: false
-        });
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error("incompatible");
+      }
 
-        if (cancelado) {
-          stream.getTracks().forEach(track => track.stop());
-          return;
-        }
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "user",
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          aspectRatio: { ideal: 4 / 3 }
+        },
+        audio: false
+      });
 
-        streamRef.current = stream;
+      if (cancelado) {
+        stream.getTracks().forEach(track => track.stop());
+        return;
+      }
 
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-        }
+      streamRef.current = stream;
 
-        if (!cancelado) {
-          setEstadoCamara("activa");
-          setMensaje(
-            "Cámara activa. Colocá tu rostro frente a la cámara."
-          );
-        }
-      } catch (error) {
-        if (cancelado) return;
+      if (videoElement) {
+        videoElement.srcObject = stream;
+        await videoElement.play();
+      }
 
-        console.error("Error al iniciar la cámara:", error);
+      if (!cancelado) {
+        setEstadoCamara("activa");
+        setMensaje(
+          "Cámara activa. Colocá tu rostro frente a la cámara."
+        );
+      }
+    } catch (error) {
+      if (cancelado) return;
 
-        setEstadoCamara("error");
+      console.error("Error al iniciar la cámara:", error);
 
-        if (error.message === "incompatible") {
-          setMensaje(
-            "Tu navegador no permite acceder a la cámara. Utilizá una conexión segura."
-          );
-        } else if (
-          error.name === "NotAllowedError" ||
-          error.name === "PermissionDeniedError"
-        ) {
-          setMensaje("Necesitamos permiso para utilizar la cámara.");
-        } else if (error.name === "NotFoundError") {
-          setMensaje("No encontramos una cámara disponible.");
-        } else if (error.name === "NotReadableError") {
-          setMensaje(
-            "La cámara está siendo utilizada por otra aplicación."
-          );
-        } else {
-          setMensaje("No pudimos iniciar la cámara. Intentá nuevamente.");
-        }
+      setEstadoCamara("error");
+
+      if (error.message === "incompatible") {
+        setMensaje(
+          "Tu navegador no permite acceder a la cámara. Utilizá una conexión segura."
+        );
+      } else if (
+        error.name === "NotAllowedError" ||
+        error.name === "PermissionDeniedError"
+      ) {
+        setMensaje("Necesitamos permiso para utilizar la cámara.");
+      } else if (error.name === "NotFoundError") {
+        setMensaje("No encontramos una cámara disponible.");
+      } else if (error.name === "NotReadableError") {
+        setMensaje(
+          "La cámara está siendo utilizada por otra aplicación."
+        );
+      } else {
+        setMensaje("No pudimos iniciar la cámara. Intentá nuevamente.");
       }
     }
+  }
 
-    iniciarCamara();
+  iniciarCamara();
 
-    return () => {
-      cancelado = true;
+  return () => {
+    cancelado = true;
 
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+    }
 
-      if (streamRef.current === stream) {
-        streamRef.current = null;
-      }
+    if (streamRef.current === stream) {
+      streamRef.current = null;
+    }
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-      }
-    };
-  }, [reintentar, pantalla, camaraSolicitada]);
+    if (videoElement) {
+      videoElement.srcObject = null;
+    }
+  };
+}, [reintentar, pantalla, camaraSolicitada]);
 
   // =====================================
   // ACCIONES
